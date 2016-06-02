@@ -1,0 +1,54 @@
+set nocompatible              " be iMproved, required
+filetype off                  " required
+
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+" alternatively, pass a path where Vundle should install plugins
+"call vundle#begin('~/some/path/here')
+
+" let Vundle manage Vundle, required
+Plugin 'VundleVim/Vundle.vim'
+
+" MIS PLUGINS
+" Navegador de archivos
+Plugin 'scrooloose/nerdtree'
+Plugin 'jistr/vim-nerdtree-tabs'
+let g:nerdtree_tabs_open_on_console_startup = 1
+" Una barra de estado que se integra con vim-gitgutter
+Plugin 'bling/vim-airline' " lean & mean status/tabline for vim that’s light as air
+let g:airline#extensions#tabline#enabled = 1
+let g:airline_powerline_fonts = 1
+let g:airline_theme = 'badwolf'
+set laststatus=2
+Plugin 'airblade/vim-gitgutter'
+highlight clear SignColumn " muestra barra a la izquierda con los cambios
+" Colores para tmux
+Plugin 'edkolev/tmuxline.vim'
+
+" Esquemas de colores
+Plugin 'sickill/vim-monokai'
+colorscheme monokai
+syntax enable
+
+"typescript plugins
+Plugin 'leafgarland/typescript-vim'
+let g:typescript_compiler_options = '-sourcemap'
+autocmd QuickFixCmdPost [^l]* nested cwindow
+autocmd QuickFixCmdPost    l* nested lwindow
+
+
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+:filetype plugin indent on   " required
+" To ignore plugin indent changes, instead use:
+"filetype plugin on
+"
+" Brief help
+" :PluginList       - lists configured plugins
+" :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
+" :PluginSearch foo - searches for foo; append `!` to refresh local cache
+" :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
+"
+" see :h vundle for more details or wiki for FAQ
+" Put your non-Plugin stuff after this line

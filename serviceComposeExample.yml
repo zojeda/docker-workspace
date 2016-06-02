@@ -1,0 +1,30 @@
+version: '2'
+services:
+    development: {image: zojeda/ts-dev, command: 'tail -f /dev/null', ports: ['5858', '3000', '5000']}
+    ssh_development: {
+      image: jeroenpeeters/docker-ssh, volumes: ['/var/run/docker.sock:/var/run/docker.sock'],  ports: ['22', '8022'], environment: {
+        CONTAINER: zojedaproteus_development_1, AUTH_MECHANISM: noAuth}, networks: {
+          docker-pde: {aliases: [ssh.development.zojedaproteus]}
+          }, labels: {
+            dockerpde.name: ssh.development.zojedaproteus, dockerpde.application.type: tcp-service, dockerpde.tag: web.ssh}
+            }
+    
+    development_tool_cloud9: {
+      ports: ['8181'], labels: {
+        dockerpde.name: cloud9.zojedaproteus, dockerpde.application.type: web-application}, networks: {
+        docker-pde: {aliases: [cloud9.zojedaproteus]}}, image: zojeda/ts-dev, command: 'node /cloud9/server.js --listen 0.0.0 -a : -w /sample-project'}
+    
+    development_service_mymongodb: {
+      ports: ['27017'], labels: {
+        dockerpde.name: mymongodb.zojedaproteus, dockerpde.application.type: tcp-service}, 
+        networks: {docker-pde: {aliases: [mymongodb.zojedaproteus]}}, image: mongo}
+
+    ssh.development_service_mymongodb: {
+      image: jeroenpeeters/docker-ssh, volumes: ['/var/run/docker.sock:/var/run/docker.sock'], ports: ['22', '8022'], environment: {CONTAINER: zojedaproteus_ssh.development_service_mymongodb_1, AUTH_MECHANISM: noAuth}, networks: {
+        docker-pde: {aliases: [ssh.development_service_mymongodb.zojedaproteus]}},
+        labels: {dockerpde.name: ssh.development_service_mymongodb.zojedaproteus, dockerpde.application.type: tcp-service, dockerpde.tag: web.ssh}
+      }
+      
+      
+networks:
+    docker-pde: {external: {name: dockerpde_default}}
