@@ -8,7 +8,6 @@ class Workspace {
   private dockerWorkspaceHandler: DockerodeHandler;
 
   constructor(public workspaceDefinition: WorkspaceDefinition, workspaceId?: string) {
-    this.workspaceDefinition = require("./sampleProjectDefinition");
     this.dockerWorkspaceHandler = new DockerodeHandler(workspaceId, this.workspaceDefinition);
   }
 

@@ -20,9 +20,9 @@ interface ApplicationDefinition {
 
 interface DevelopmentEnvironment {
   image: string;
-  ports: number[];
+  ports?: number[];
   code: string;
-  commands: { [name: string]: CommandDefinition };
+  commands?: { [name: string]: CommandDefinition };
   tools: { [name: string]: ApplicationDefinition };
   services: { [name: string]: ApplicationDefinition };
   shell?: string;
