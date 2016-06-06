@@ -7,7 +7,7 @@ class Workspace {
   private composeDefinition: any;
   private dockerWorkspaceHandler: DockerodeHandler;
 
-  constructor(public workspaceDefinition: WorkspaceDefinition, workspaceId?: string) {
+  constructor(public workspaceDefinition: WorkspaceDefinition, workspaceId: string) {
     this.dockerWorkspaceHandler = new DockerodeHandler(workspaceId, this.workspaceDefinition);
   }
 

@@ -1,4 +1,5 @@
 import Docker = require("dockerode");
+import winston = require("winston");
 
 class DockerodeHandler {
   docker: Docker;
@@ -7,10 +8,19 @@ class DockerodeHandler {
   }
 
   public async start(progress? : (string) => any) {
-    let services = this.workspaceDefinition.development.services;
-    Object.keys(services).forEach((serviceName) => {
-      this.runApplication(serviceName, services[serviceName], progress);
-    });
+    try {
+      let network = await this.createNetwork();
+      let services = this.workspaceDefinition.development.services;
+      Object.keys(services).forEach((serviceName) => {
+        this.runApplication(serviceName, services[serviceName], progress);
+      });
+      let tools = this.workspaceDefinition.development.tools;
+      Object.keys(tools).forEach((toolName) => {
+        this.runApplication(toolName, tools[toolName], progress);
+      });
+    } catch (error) {
+      winston.error(error);
+    }
   }
 
   public stop(response: Response<string, string>) {
@@ -22,13 +32,12 @@ class DockerodeHandler {
   }
 
   public async runApplication(name: string, app: ApplicationDefinition, progress? : (string) => any) {
-    console.log("service : ", JSON.stringify(app), null, 2);
     try {
       // await this.pull(app.image, progress);
       let created = await this.startContainer(name, app.image, app.command, progress);
-      console.log("created : " + JSON.stringify(created, null, 2));
+      winston.debug("created : " + JSON.stringify(created, null, 2));
     } catch (e) {
-      console.log("error : ", e);
+      winston.error("error : ", e);
     }
   }
 
@@ -54,23 +63,28 @@ class DockerodeHandler {
   }
 
   private async startContainer(name: string, image: string, command?: string, progress?: (message: string) => any) {
-    console.log(" image: ", image);
+    let containerName = this.workspaceId + "_" + name;
     return new Promise<any>((resolve, reject) => {
-      this.docker.createContainer({
-        name: this.workspaceId + "_" + name,
-        Image: image,
-        Cmd: command
-      }, (error, container) => {
+    let commandArray = command && ["bash", "-c", command];
+    let containerImage = image || this.workspaceDefinition.development.image;
+    this.docker.run(containerImage,
+      commandArray,
+      [process.stdout, process.stderr],
+      {
+      Tty:false,
+      name: containerName,
+      Labels: {
+          "docker-workspace": "true"
+      },
+      HostConfig: {NetworkMode: this.workspaceId}
+
+    },
+      (error, data, container) =>{
         if (error) {
           return reject(error);
         }
-        container.start((error) => {
-            if (error) {
-              return reject(error);
-            }
-            resolve(container);
-            });
-        });
+        resolve(container);
+      });
     });
   }
 
@@ -80,6 +94,26 @@ class DockerodeHandler {
       resolve(message);
     }, 300));
   }
+
+  private createNetwork() {
+    return new Promise<{Id: string, Warning?: string}>((resolve, reject) => {
+      this.docker.createNetwork({
+        Name: this.workspaceId,
+        CheckDuplicate: true,
+        Labels: {
+          "docker-workspace": "true"
+        }}, (error, network) => {
+          if (error) {
+            return reject(error);
+          } else {
+            resolve(network);
+          }
+      });
+    });
+  }
+  
+  
+  
 }
 
 export = DockerodeHandler;

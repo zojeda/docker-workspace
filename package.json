@@ -11,7 +11,8 @@
   "author": "Zacarias F. Ojeda <zojeda@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "dockerode": "^2.2.10"
+    "dockerode": "^2.2.10",
+    "winston": "^2.2.0"
   },
   "devDependencies": {
     "typescript": "^1.8.10",
