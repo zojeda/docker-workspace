@@ -115,7 +115,7 @@ export class DockerodeHandler {
     let containerImage = image || this.workspaceDefinition.development.image;
     this.docker.run(containerImage,
       commandArray,
-      [],
+      undefined,
       {
         Tty:false,
         name: containerName,
