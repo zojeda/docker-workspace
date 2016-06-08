@@ -2,7 +2,8 @@
   "name": "docker-workspace",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/Workspace.js",
+  "typings": "dist/api.d.ts",
   "scripts": {
     "build": "tsc -p .",
     "typings": "typings install",

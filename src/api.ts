@@ -1,14 +1,9 @@
-interface Response<T, N> {
-  complete: (error: Error, response?: T) => void;
-  progress?: (N) => void;
-}
-
-interface CommandDefinition {
+export interface CommandDefinition {
   description: string;
   style: string;
 }
 
-interface ApplicationDefinition {
+export interface ApplicationDefinition {
   image?: string;
   command?: string;
   description?: string;
@@ -18,7 +13,7 @@ interface ApplicationDefinition {
   shell?: string;
 }
 
-interface DevelopmentEnvironment {
+export interface DevelopmentEnvironment {
   image: string;
   ports?: number[];
   code: string;
@@ -26,21 +21,15 @@ interface DevelopmentEnvironment {
   tools: { [name: string]: ApplicationDefinition };
   services: { [name: string]: ApplicationDefinition };
   shell?: string;
+  provision?: { [name: string]: any };
 }
 
-interface WorkspaceDefinition {
+export interface WorkspaceDefinition {
   development: DevelopmentEnvironment;
 }
 
-interface User {
-  id: string;
-  workspaces: WorkspaceDefinition[];
+export interface WorkspaceStatus {
+  definition: WorkspaceDefinition;
 }
 
-
-
-interface ProjectDefinition {
-  id?: string;
-  name: string;
-}
-
+export {Workspace} from "./Workspace";

@@ -1,13 +1,14 @@
 import fs = require("fs");
 import path = require("path");
-import DockerodeHandler = require("./DockerodeHandler");
+import {DockerodeHandler} from "./DockerodeHandler";
+import {WorkspaceDefinition, WorkspaceStatus} from "./api";
 
-class Workspace {
+export class Workspace {
   private workspaceDefinitionPath: string;
   private composeDefinition: any;
   private dockerWorkspaceHandler: DockerodeHandler;
 
-  constructor(public workspaceDefinition: WorkspaceDefinition, workspaceId: string) {
+  constructor(public workspaceDefinition: WorkspaceDefinition, public workspaceId: string) {
     this.dockerWorkspaceHandler = new DockerodeHandler(workspaceId, this.workspaceDefinition);
   }
 
@@ -19,16 +20,15 @@ class Workspace {
     this.dockerWorkspaceHandler.start(progress);
   }
 
-  public stop(response: Response<string, string>) {
-    // this.stopComposition(["down"], response);
+  public async stop(progress? : (string) => any) {
+    await this.dockerWorkspaceHandler.stop(progress);
+  }
+  public async delete(progress? : (string) => any) {
+    await this.dockerWorkspaceHandler.delete(progress);
   }
 
-  public status(response: Response<string, string>) {
-    // this.statusComposition(["ps", "-q"], response);
+  public async status() : Promise<WorkspaceStatus> {
+    return await this.dockerWorkspaceHandler.status();
   }
 
 }
-
-
-
-export = Workspace;

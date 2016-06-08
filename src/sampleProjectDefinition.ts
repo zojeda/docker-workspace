@@ -1,8 +1,11 @@
-let workspaceDefinition: WorkspaceDefinition = {
+import {WorkspaceDefinition} from "./api";
+
+export let workspaceDefinition: WorkspaceDefinition = {
   development: {
     image: "zojeda/ts-dev",
     ports: [5858, 3000, 5000],
     code: "/sample-project",
+    provision: { fs : {path: "../content"}},
     commands: {
       start: { description: "Start the application", style: "fa fa-play" },
       clean: { description: "Remove all dependencies and built assets", style: "fa fa-trash" },
@@ -35,4 +38,3 @@ let workspaceDefinition: WorkspaceDefinition = {
 };
 
 
-export = workspaceDefinition;
