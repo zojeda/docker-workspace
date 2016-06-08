@@ -115,26 +115,26 @@ export class DockerodeHandler {
     let containerImage = image || this.workspaceDefinition.development.image;
     this.docker.run(containerImage,
       commandArray,
-      [process.stdout, process.stderr],
+      [],
       {
-      Tty:false,
-      name: containerName,
-      Labels: {
-          "workspace": "true",
-          "workspace.id": this.workspaceId,
-          "workspace.application.name": name,
-          "workspace.application.path": path,
-      },
-      HostConfig: {NetworkMode: this.workspaceId}
+        Tty:false,
+        name: containerName,
+        Labels: {
+            "workspace": "true",
+            "workspace.id": this.workspaceId,
+            "workspace.application.name": name,
+            "workspace.application.path": path,
+        },
+        HostConfig: {NetworkMode: this.workspaceId}
 
-    },
-      (error, data, container) =>{
-        if (error) {
-          return reject(error);
-        }
-        resolve(container);
+      },
+        (error, data, container) =>{
+          if (error) {
+            return reject(error);
+          }
+          resolve(container);
+        });
       });
-    });
   }
 
   private fakeCall(message: string, progress?: (string) => any) {
