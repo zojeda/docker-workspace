@@ -4,8 +4,10 @@ export let workspaceDefinition: WorkspaceDefinition = {
   development: {
     image: "zojeda/ts-dev",
     ports: [5858, 3000, 5000],
-    code: "/sample-project",
-    provision: { fs : {path: "../content"}},
+    code: {
+      path: "/sample-project",
+      provision: { "fs-copy" : {path: "../content"}}
+    },
     commands: {
       start: { description: "Start the application", style: "fa fa-play" },
       clean: { description: "Remove all dependencies and built assets", style: "fa fa-trash" },

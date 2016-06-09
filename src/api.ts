@@ -3,7 +3,7 @@ export interface CommandDefinition {
   style: string;
 }
 
-export interface ApplicationDefinition {
+export interface RuntimeDefinition {
   image?: string;
   command?: string;
   description?: string;
@@ -16,12 +16,15 @@ export interface ApplicationDefinition {
 export interface DevelopmentEnvironment {
   image: string;
   ports?: number[];
-  code: string;
+  code: {
+    path: string,
+    bindToHostPath?: string, //absolute path
+    provision?: { [name: string]: any };
+  };
   commands?: { [name: string]: CommandDefinition };
-  tools: { [name: string]: ApplicationDefinition };
-  services: { [name: string]: ApplicationDefinition };
+  tools: { [name: string]: RuntimeDefinition };
+  services: { [name: string]: RuntimeDefinition };
   shell?: string;
-  provision?: { [name: string]: any };
 }
 
 export interface WorkspaceDefinition {

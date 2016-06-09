@@ -1,6 +1,11 @@
-interface DockerResponse<T> { (error: Error, response?: T): void; }
+declare namespace dockerode {
+  interface DockerResponse<T> { (error: Error, response?: T): void; }
 
-declare module "dockerode" {
+
+  interface Labels {
+    [key: string]: string
+  }
+
   //https://docs.docker.com/engine/reference/api/docker_remote_api_v1.22/#create-a-container
   interface CreateContainerOptions {
     name?: string;
@@ -80,7 +85,7 @@ declare module "dockerode" {
       ShmSize?: number;
     };
   }
-  
+
   interface CreateContainerReq extends CreateContainerOptions {
     Image: string;
   }
@@ -124,8 +129,8 @@ declare module "dockerode" {
     statusCode: number;
     json: string;
   }
-  
-  
+
+
   interface Container {
     id: string;
     inspect(options: {
@@ -142,15 +147,15 @@ declare module "dockerode" {
     //unpause
     //exec
     //commit
-    stop(done: DockerResponse<any>);  
+    stop(done: DockerResponse<any>);
     restart(done: DockerResponse<void>);
     restart(params: { t: number }, done: DockerResponse<void>);
     //kill
     //resize
     //attach
     //wait
-    remove(done: DockerResponse<any>);  
-    remove(options: {v?: boolean, force?: boolean}, done: DockerResponse<any>);  
+    remove(done: DockerResponse<any>);
+    remove(options: { v?: boolean, force?: boolean }, done: DockerResponse<any>);
     //copy
     //getArchive
     //infoArchive
@@ -165,9 +170,9 @@ declare module "dockerode" {
     }, done: DockerResponse<NodeJS.ReadableStream>);
     //stats
   }
-  
+
   interface Network {
-    remove(done: DockerResponse<any>);  
+    remove(done: DockerResponse<any>);
   }
 
   interface ListQueryParameters {
@@ -213,8 +218,8 @@ declare module "dockerode" {
     IPAM?: any;                //  - Optional custom IP scheme for the network
     EnableIPv6?: boolean;      //  - Enable IPv6 on the network
     Options?: any;             //- Network specific options to be used by the drivers
-    Labels?: { [label: string]: string }; //  - Labels to set on the network, specified as a map:
-    
+    Labels?: Labels;           //  - Labels to set on the network, specified as a map:
+
   }
 
   interface AuthConfig {
@@ -224,23 +229,23 @@ declare module "dockerode" {
     email?: string;
     serveraddress: string;
   }
-  
+
 
   class Modem {
     followProgress(stream: NodeJS.ReadableStream, onFinished: (error, output) => any, onProgress: (event) => any);
   }
-  
+
 
   class Docker {
     modem: Modem;
     constructor(dockerHost?: any);
     pull(tag: string, auth: { "authconfig": AuthConfig }, done: DockerResponse<any>);
     pull(tag: string, done: (err: ErrorObject, stream: NodeJS.ReadableStream) => any);
-    listContainers(options: ListQueryParameters, done: DockerResponse<ContainerInfo[]>);
     listContainers(done: DockerResponse<ContainerInfo[]>);
+    listContainers(options: ListQueryParameters, done: DockerResponse<ContainerInfo[]>);
     getContainer(id: string): Container;
     getNetwork(id: string): Network;
-    
+
     /**
      * image: string,  // - container image
      * cmd: string[],  // - command to be executed
@@ -253,7 +258,11 @@ declare module "dockerode" {
     //run(image, cmd, stream, callback);
     createContainer(configuration: CreateContainerReq, callback: (err: ErrorObject, container: Container) => any);
     getEvents(options: EventsQueryParameters, callback: (err: ErrorObject, events: NodeJS.ReadableStream) => any)
-    createNetwork(options: NetworkParameters, callback: (err: ErrorObject, network: {Id: string, Warning? : string}) => any)
+    createNetwork(options: NetworkParameters, callback: (err: ErrorObject, network: { Id: string, Warning?: string }) => any)
   }
-  export = Docker;
+}
+
+
+declare module "dockerode" {
+  export = dockerode.Docker;
 }
