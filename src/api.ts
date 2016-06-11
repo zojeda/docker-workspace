@@ -33,6 +33,16 @@ export interface WorkspaceDefinition {
 
 export interface WorkspaceStatus {
   definition: WorkspaceDefinition;
+  status: {[path: string]: {
+    status: string,
+    type: string,
+    network: {
+      ip: string,
+      port: number,
+      externalUrl?: string
+    },
+    definition: RuntimeDefinition
+  }};
 }
 
 export {Workspace} from "./Workspace";

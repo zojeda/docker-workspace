@@ -104,7 +104,7 @@ declare namespace dockerode {
       PublicPort: number;
       Type: string
     }[];
-    Labels: {};
+    Labels: Labels;
     SizeRw: number;
     SizeRootFs: number;
     NetworkSettings: {
@@ -122,8 +122,32 @@ declare namespace dockerode {
         }
       }
     };
-
   }
+  
+  interface NetworkInfo   {
+    Name: string,
+    Id: string,
+    Scope: string,
+    Driver: string,
+    EnableIPv6: boolean,
+    Internal: boolean,
+    IPAM: {
+      Driver: string,
+      Config: [
+        { [key: string]: string}
+      ]
+    },
+    Containers: {
+      [id: string]: {
+        EndpointID: string,
+        MacAddress: string,
+        IPv4Address: string,
+        IPv6Address: string
+      }
+    },
+    "Options": { [key: string]: string}
+  }
+  
   interface ErrorObject {
     reason: string;
     statusCode: number;
@@ -175,7 +199,7 @@ declare namespace dockerode {
     remove(done: DockerResponse<any>);
   }
 
-  interface ListQueryParameters {
+  interface ListConainersQueryParameters {
     all?: boolean;
     limit?: number;
     since?: string;
@@ -188,6 +212,14 @@ declare namespace dockerode {
       label?: string[],
       isolation?: ("default" | "process" | "hyperv")[]// (Windows daemon only)
     };
+  }
+  
+  interface ListNetworksQueryParameters {
+    filters:  {       //  - JSON encoded network list filter. The filter value is one of:
+        name: string  //  =<network-name> Matches all or part of a network name.
+        id: string,   //  =<network-id> Matches all or part of a network id.
+        type: "custom"|"builtin"// Filters networks by type. The custom keyword returns all user-defined networks.
+    }
   }
 
   interface EventsQueryParameters {
@@ -242,8 +274,10 @@ declare namespace dockerode {
     pull(tag: string, auth: { "authconfig": AuthConfig }, done: DockerResponse<any>);
     pull(tag: string, done: (err: ErrorObject, stream: NodeJS.ReadableStream) => any);
     listContainers(done: DockerResponse<ContainerInfo[]>);
-    listContainers(options: ListQueryParameters, done: DockerResponse<ContainerInfo[]>);
+    listContainers(options: ListConainersQueryParameters, done: DockerResponse<ContainerInfo[]>);
     getContainer(id: string): Container;
+    listNetworks(done: DockerResponse<NetworkInfo[]>);
+    listNetworks(options: ListNetworksQueryParameters, done: DockerResponse<NetworkInfo[]>);
     getNetwork(id: string): Network;
 
     /**
