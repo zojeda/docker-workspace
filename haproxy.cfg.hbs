@@ -1,0 +1,32 @@
+global
+    daemon
+    maxconn 256
+ 
+defaults
+    mode http
+    timeout connect 5000ms
+    timeout client 50000ms
+    timeout server 50000ms
+ 
+frontend http-in
+    bind *:8080
+ 
+{{#each statuses }}
+{{#each runtimes}}
+    acl {{../workspaceId}}.{{@key}}  hdr(host)     -m beg {{../workspaceId}}.{{@key}}.
+    use_backend {{../workspaceId}}.{{@key}} if {{../workspaceId}}.{{@key}}
+{{/each}}
+{{/each}}
+
+
+{{#each statuses }}
+{{#each runtimes}}
+backend {{../workspaceId}}.{{@key}}
+    server {{../workspaceId}}.{{@key}} {{this.network.additional.[@@TEAM@@]}}:{{this.network.port}} maxconn 32
+{{/each}}
+{{/each}}
+ 
+  
+listen admin
+    bind *:8081
+    stats enable

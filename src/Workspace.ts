@@ -2,6 +2,15 @@ import fs = require("fs");
 import path = require("path");
 import Docker = require("dockerode");
 
+var Handlebars = require("handlebars");
+Handlebars.registerHelper( "eachInMap", function ( map, block ) {
+   var out = "";
+   Object.keys( map ).map(function( prop ) {
+      out += block.fn( {key: prop, value: map[ prop ]} );
+   });
+   return out;
+} );
+
 import {DockerodePromesied} from "./DockerodePromesied";
 import {DockerodeHandler} from "./DockerodeHandler";
 import {WorkspaceDefinition, WorkspaceStatus} from "./api";
@@ -26,6 +35,7 @@ export class Workspace {
 
   public async delete(progress?: (string) => any) {
     await this.dockerWorkspaceHandler.delete(progress);
+    await this.reloadWebProxy();
   }
 
   public async status(): Promise<WorkspaceStatus> {
@@ -54,10 +64,12 @@ export class Workspace {
 
       this.proxyContainer = await Workspace.dockerP.createContainer(containerOptions);
       await Workspace.dockerP.startContainer(this.proxyContainer);
+    } else {
+      this.proxyContainer = Workspace.docker.getContainer(proxys[0].Id);
     }
     console.log("restarting proxy conf");
     await this.regenerateHAProxyConf();
-    //await Workspace.dockerP.killContainer(this.proxyContainer, "HUP");
+    await Workspace.dockerP.killContainer(this.proxyContainer, "HUP");
     console.log("restarted");
   }
 
@@ -74,7 +86,12 @@ export class Workspace {
     let statusesP = workspaceIds
       .map(workspaceId => new Workspace(this.workspaceDefinition, workspaceId)) //FIXME: extract the definition using an special label in the workspace network
       .map(ws => ws.status());
-    return await Promise.all(statusesP);
+    let statuses = await Promise.all(statusesP);
+    let template = Handlebars.compile(fs.readFileSync("./haproxy.cfg.hbs").toString().replace("@@TEAM@@", this.workspaceDefinition.team));
+    let result = template({statuses: statuses});
+    fs.writeFileSync("./haproxy.cfg", result);
+    return statuses;
+
   }
 
   private systemNetwork: dockerode.Network;

@@ -75,7 +75,9 @@ function statusWorkspace(ya: yargs.Yargs) {
   console.log("getting status workspace with id :", workspaceId);
   let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync("workspace-definition.json").toString());
   let workspace = new Workspace(workspaceDefinition, workspaceId);
-  workspace.status().then(status => console.log(prettyjson.render(status)));
+  workspace.status()
+    .then(status => console.log(prettyjson.render(status)))
+    .catch(error => console.error(error));
 }
 
 function listWorkspaces(ya: yargs.Yargs) {

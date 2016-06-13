@@ -400,3 +400,24 @@
 {"level":"info","message":"[ otro ]: 'start container' result -  ","timestamp":"2016-06-13T05:26:30.886Z"}
 {"level":"info","message":"[ otro ]: 'start container' result -  ","timestamp":"2016-06-13T05:26:32.040Z"}
 {"level":"info","message":"[ otro ]: workspace started","timestamp":"2016-06-13T05:26:34.039Z"}
+{"level":"info","message":"[ zojeda ]: removing container :  [ '/cloud9.zojeda' ]","timestamp":"2016-06-13T08:09:18.855Z"}
+{"level":"info","message":"[ zojeda ]: removing container :  [ '/mongodb.zojeda' ]","timestamp":"2016-06-13T08:09:18.859Z"}
+{"level":"info","message":"[ zojeda ]: 'removing network' result -  ","timestamp":"2016-06-13T08:09:22.201Z"}
+{"level":"info","message":"[ zojeda ]: workspace deleted","timestamp":"2016-06-13T08:09:22.202Z"}
+{"level":"info","message":"[ otro ]: removing container :  [ '/mongodb.otro' ]","timestamp":"2016-06-13T08:23:06.551Z"}
+{"level":"info","message":"[ otro ]: removing container :  [ '/cloud9.otro' ]","timestamp":"2016-06-13T08:23:06.555Z"}
+{"level":"info","message":"[ otro ]: 'removing network' result -  ","timestamp":"2016-06-13T08:23:08.440Z"}
+{"level":"info","message":"[ otro ]: workspace deleted","timestamp":"2016-06-13T08:23:08.441Z"}
+{"level":"info","message":"[ workspace ]: 'start container' result -  ","timestamp":"2016-06-13T08:23:08.993Z"}
+{"level":"error","message":"[ workspace ] creating container  { [Error: HTTP code is 409 which indicates error: undefined - Conflict. The name \"/workspace.proxy\" is already in use by container a26c622f6ba7c56e1c829681723a25113df6bdf21232062f58caeed91f72c715. You have to remove (or rename) that container to be able to reuse that name.\n]\n  reason: undefined,\n  statusCode: 409,\n  json: 'Conflict. The name \"/workspace.proxy\" is already in use by container a26c622f6ba7c56e1c829681723a25113df6bdf21232062f58caeed91f72c715. You have to remove (or rename) that container to be able to reuse that name.\\n' }","timestamp":"2016-06-13T08:23:45.475Z"}
+{"level":"info","message":"[ workspace ]: 'start container' result -  ","timestamp":"2016-06-13T08:24:04.308Z"}
+{"level":"info","message":"[ zojeda ]: 'start container' result -  ","timestamp":"2016-06-13T08:24:05.868Z"}
+{"level":"info","message":"[ zojeda ]: 'start container' result -  ","timestamp":"2016-06-13T08:24:06.466Z"}
+{"level":"info","message":"[ zojeda ]: workspace started","timestamp":"2016-06-13T08:24:07.681Z"}
+{"level":"info","message":"[ otro ]: 'start container' result -  ","timestamp":"2016-06-13T08:25:18.577Z"}
+{"level":"info","message":"[ otro ]: 'start container' result -  ","timestamp":"2016-06-13T08:25:18.611Z"}
+{"level":"info","message":"[ otro ]: workspace started","timestamp":"2016-06-13T08:25:20.683Z"}
+{"level":"info","message":"[ otro ]: removing container :  [ '/cloud9.otro' ]","timestamp":"2016-06-13T08:26:37.075Z"}
+{"level":"info","message":"[ otro ]: removing container :  [ '/mongodb.otro' ]","timestamp":"2016-06-13T08:26:37.079Z"}
+{"level":"info","message":"[ otro ]: 'removing network' result -  ","timestamp":"2016-06-13T08:26:39.044Z"}
+{"level":"info","message":"[ otro ]: workspace deleted","timestamp":"2016-06-13T08:26:39.045Z"}
