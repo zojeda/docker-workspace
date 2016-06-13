@@ -122,7 +122,7 @@ export class DockerodePromesied {
             logger.error("[ %s ] %s ", this.logMark, message, error);
             return reject(error);
           }
-          logger.info("[ %s ]: '%s' result - ", this.logMark, message, result);
+          logger.debug("[ %s ]: '%s' result - ", this.logMark, message, result);
           resolve(result);
         });
       });

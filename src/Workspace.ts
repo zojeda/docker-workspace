@@ -2,18 +2,12 @@ import fs = require("fs");
 import path = require("path");
 import Docker = require("dockerode");
 
-var Handlebars = require("handlebars");
-Handlebars.registerHelper( "eachInMap", function ( map, block ) {
-   var out = "";
-   Object.keys( map ).map(function( prop ) {
-      out += block.fn( {key: prop, value: map[ prop ]} );
-   });
-   return out;
-} );
 
 import {DockerodePromesied} from "./DockerodePromesied";
 import {DockerodeHandler} from "./DockerodeHandler";
 import {WorkspaceDefinition, WorkspaceStatus} from "./api";
+import {logger} from "./logger";
+var Handlebars = require("handlebars");
 
 export class Workspace {
   private workspaceDefinitionPath: string;
@@ -45,6 +39,8 @@ export class Workspace {
 
   public async reloadWebProxy() {
     await this.getTeamNetwork();
+    logger.info("restarting proxy conf");
+    await this.regenerateHAProxyConf();
     let proxys = await Workspace.dockerP.listContainers({ filters: { label: ["workspace=proxy", "workspace-team=" + this.teamName] } });
     if (proxys.length === 0) {
       let containerOptions: dockerode.CreateContainerReq = {
@@ -57,7 +53,7 @@ export class Workspace {
         },
         HostConfig: {
           NetworkMode: this.teamName,
-          Binds: [`${path.join(process.cwd(), "haproxy.cfg")}:/usr/local/etc/haproxy/haproxy.cfg`],
+          Binds: [`${path.join(this.UserConfigPath, "haproxy.cfg")}:/usr/local/etc/haproxy/haproxy.cfg`],
           PortBindings: { "8080/tcp": [{ HostPort: "8080" }] }
         }
       };
@@ -67,10 +63,7 @@ export class Workspace {
     } else {
       this.proxyContainer = Workspace.docker.getContainer(proxys[0].Id);
     }
-    console.log("restarting proxy conf");
-    await this.regenerateHAProxyConf();
     await Workspace.dockerP.killContainer(this.proxyContainer, "HUP");
-    console.log("restarted");
   }
 
 
@@ -87,9 +80,9 @@ export class Workspace {
       .map(workspaceId => new Workspace(this.workspaceDefinition, workspaceId)) //FIXME: extract the definition using an special label in the workspace network
       .map(ws => ws.status());
     let statuses = await Promise.all(statusesP);
-    let template = Handlebars.compile(fs.readFileSync("./haproxy.cfg.hbs").toString().replace("@@TEAM@@", this.workspaceDefinition.team));
+    let template = Handlebars.compile(fs.readFileSync(path.join(__dirname, "..", "haproxy.cfg.hbs")).toString().replace("@@TEAM@@", this.workspaceDefinition.team));
     let result = template({statuses: statuses});
-    fs.writeFileSync("./haproxy.cfg", result);
+    fs.writeFileSync(path.join(this.UserConfigPath, "haproxy.cfg"), result);
     return statuses;
 
   }
@@ -121,5 +114,14 @@ export class Workspace {
   private get teamName() {
     return this.workspaceDefinition.team || "workspace.generic";
   }
+
+ private get UserConfigPath() {
+   var mkdirp = require("mkdirp");
+   let userConfigPath = path.join(process.env.HOME || process.env.USERPROFILE, ".docker-workspace", this.workspaceDefinition.team);
+     if(!fs.existsSync(userConfigPath)) {
+     mkdirp.sync(userConfigPath);
+   }
+   return userConfigPath;
+ }
 
 }
