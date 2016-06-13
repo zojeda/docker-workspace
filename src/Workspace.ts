@@ -70,10 +70,10 @@ export class Workspace {
   public static async list(team?: string) {
     let networks = await Workspace.dockerP.listNetworks({});
     return networks.filter(network => team
-       ? network.Labels["workspace.team"]===team
-       : network.Labels["workspace.id"] !== undefined).map(network => network.Labels["workspace.id"]);
+      ? network.Labels["workspace.team"] === team
+      : network.Labels["workspace.id"] !== undefined).map(network => network.Labels["workspace.id"]);
   }
-  
+
   public async regenerateHAProxyConf() {
     let workspaceIds = await Workspace.list();
     let statusesP = workspaceIds
@@ -81,7 +81,7 @@ export class Workspace {
       .map(ws => ws.status());
     let statuses = await Promise.all(statusesP);
     let template = Handlebars.compile(fs.readFileSync(path.join(__dirname, "..", "haproxy.cfg.hbs")).toString().replace("@@TEAM@@", this.workspaceDefinition.team));
-    let result = template({statuses: statuses});
+    let result = template({ statuses: statuses });
     fs.writeFileSync(path.join(this.UserConfigPath, "haproxy.cfg"), result);
     return statuses;
 
@@ -115,13 +115,14 @@ export class Workspace {
     return this.workspaceDefinition.team || "workspace.generic";
   }
 
- private get UserConfigPath() {
-   var mkdirp = require("mkdirp");
-   let userConfigPath = path.join(process.env.HOME || process.env.USERPROFILE, ".docker-workspace", this.workspaceDefinition.team);
-     if(!fs.existsSync(userConfigPath)) {
-     mkdirp.sync(userConfigPath);
-   }
-   return userConfigPath;
- }
+  public get UserConfigPath() {
+    var mkdirp = require("mkdirp");
+    let userConfigPath = path.join(process.env.HOME || process.env.USERPROFILE, ".docker-workspace", this.workspaceDefinition.team);
+    if (!fs.existsSync(userConfigPath)) {
+      mkdirp.sync(userConfigPath);
+      logger.info("created workspace config dir : ", userConfigPath);
+    }
+    return userConfigPath;
+  }
 
 }

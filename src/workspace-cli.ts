@@ -1,14 +1,12 @@
+#!/usr/bin/env node
+
 import fs = require("fs");
 import path = require("path");
 import yargs = require("yargs");
 
 import {Workspace, WorkspaceDefinition} from "./api";
-import {capaMongoWorkspace} from "./mongoTrainingDefinition";
 
 var prettyjson = require("prettyjson");
-
-//FIXME remove
-fs.writeFileSync("workspace-definition.json", JSON.stringify(capaMongoWorkspace, null, 2));
 
 yargs
     .usage("Usage: $0 <command> [options]")
@@ -26,8 +24,8 @@ yargs
 
 function startWorkspace(ya: yargs.Yargs) {
   let argv = ya
-    .usage("usage: $0 start [workspaceId] [options]")
-    .example("$0 <command> -w <workspace-def.json>", "start a workspace with the given id")
+    .usage("usage: $0 start [workspaceIds] [options]")
+    .example("$0 <command> -w <workspace-def.json>", "start one or more workspaces with provided ids")
     .options({
       w: {
         alias: "ws-def",
@@ -40,27 +38,36 @@ function startWorkspace(ya: yargs.Yargs) {
     .alias("h", "help")
     .argv;
 
-  let workspaceId = argv._[1] || path.basename(process.cwd());
-  let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
-  let workspace = new Workspace(workspaceDefinition, workspaceId);
-  workspace.reloadWebProxy()
-    .then(() => workspace.start() )
-    .catch(err => console.error);
+  let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
+  workspaceIds.forEach(workspaceId => {
+    let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
+    let workspace = new Workspace(workspaceDefinition, workspaceId);
+    workspace.start();
+  });
 }
 
 function stopWorkspace(ya: yargs.Yargs) {
   let argv = ya
     .usage("usage: $0 stop [workspaceId]")
-    .example("$0 <command>", "stop a workspace with the given id")
+    .example("$0 <command>", "stop one or more workspaces with provided ids")
+    .options({
+      w: {
+        alias: "ws-def",
+        default: "workspace-definition.json",
+        describe: "Workspace Defininition file (json format)",
+        type: "string"
+      }
+    })
     .help("h")
     .alias("h", "help")
     .argv;
 
-  let workspaceId = argv._[1] || path.basename(process.cwd());
-  console.log("stoping workspace with id :", workspaceId);
-  let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync("workspace-definition.json").toString());
-  let workspace = new Workspace(workspaceDefinition, workspaceId);
-  workspace.delete();
+  let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
+  workspaceIds.forEach(workspaceId => {
+    let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
+    let workspace = new Workspace(workspaceDefinition, workspaceId);
+    workspace.delete();
+  });
 }
 
 function statusWorkspace(ya: yargs.Yargs) {
@@ -89,8 +96,7 @@ function listWorkspaces(ya: yargs.Yargs) {
     .argv;
 
   let team = argv._[1];
-  console.log("list workspaces in team :", team);
-  Workspace.list(team).then(networks => console.log(prettyjson.render(networks)));
+  Workspace.list(team).then(workspaces => workspaces.forEach((w) => console.log(w)));
 }
 
 

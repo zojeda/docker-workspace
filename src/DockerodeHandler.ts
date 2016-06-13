@@ -159,7 +159,7 @@ export class DockerodeHandler {
   }
 
   private removeContainer(containerInfo: dockerode.ContainerInfo) {
-    logger.info("[ %s ]: removing container : ", this.workspaceId, containerInfo.Names);
+    logger.debug("[ %s ]: removing container : ", this.workspaceId, containerInfo.Names);
     let container = this.docker.getContainer(containerInfo.Id);
     return this.dockerP.removeContainer(container, { force: true });
   }
