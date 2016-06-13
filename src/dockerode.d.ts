@@ -7,7 +7,7 @@ declare namespace dockerode {
   }
 
   //https://docs.docker.com/engine/reference/api/docker_remote_api_v1.22/#create-a-container
-  interface CreateContainerOptions {
+  interface ContainerCreateOptions {
     name?: string;
     Hostname?: string;
     Domainname?: string;
@@ -86,7 +86,7 @@ declare namespace dockerode {
     };
   }
 
-  interface CreateContainerReq extends CreateContainerOptions {
+  interface CreateContainerReq extends ContainerCreateOptions {
     Image: string;
   }
 
@@ -145,7 +145,8 @@ declare namespace dockerode {
         IPv6Address: string
       }
     },
-    "Options": { [key: string]: string}
+    Options: { [key: string]: string},
+    Labels: Labels
   }
   
   interface ErrorObject {
@@ -153,20 +154,42 @@ declare namespace dockerode {
     statusCode: number;
     json: string;
   }
-
-
+  
+  interface ContainerStartOptions { 
+    detachKeys: string
+  }
+  
+  interface ContainerUpdateOptions    {
+     BlkioWeight: number,
+     CpuShares: number,
+     CpuPeriod: number,
+     CpuQuota: number,
+     CpusetCpus: string,
+     CpusetMems: string,
+     Memory: number,
+     MemorySwap: number,
+     MemoryReservation: number,
+     KernelMemory: number,
+     RestartPolicy: {
+       MaximumRetryCount: number,
+       Name: string
+     },
+   }
+  interface ContainerRemoveOptions {
+     v?: boolean, force?: boolean
+  }    
   interface Container {
     id: string;
     inspect(options: {
       size: boolean
     }, callback: DockerResponse<any>); //TODO info
-    inspect(done?: DockerResponse<any>); //TODO
+    inspect(done: DockerResponse<any>); //TODO
     //rename
-    //update
+    update(params: ContainerUpdateOptions, done: DockerResponse<{Warings: string[]}>)
     //changes
     //export
-    start(params: { detachKeys: string }, done?: (err?: Error) => any);
-    start(done?: (err?: ErrorObject) => any);
+    start(params: ContainerStartOptions, done: DockerResponse<void>);
+    start(done: DockerResponse<any>);
     //pause
     //unpause
     //exec
@@ -174,12 +197,12 @@ declare namespace dockerode {
     stop(done: DockerResponse<any>);
     restart(done: DockerResponse<void>);
     restart(params: { t: number }, done: DockerResponse<void>);
-    //kill
+    kill({signal: string}, done: DockerResponse<void>);
     //resize
     //attach
     //wait
     remove(done: DockerResponse<any>);
-    remove(options: { v?: boolean, force?: boolean }, done: DockerResponse<any>);
+    remove(options: ContainerRemoveOptions, done: DockerResponse<any>);
     //copy
     //getArchive
     //infoArchive
@@ -197,6 +220,7 @@ declare namespace dockerode {
 
   interface Network {
     remove(done: DockerResponse<any>);
+    connect({Container: string}, done: DockerResponse<void>);
   }
 
   interface ListConainersQueryParameters {
@@ -215,10 +239,10 @@ declare namespace dockerode {
   }
   
   interface ListNetworksQueryParameters {
-    filters:  {       //  - JSON encoded network list filter. The filter value is one of:
-        name: string  //  =<network-name> Matches all or part of a network name.
-        id: string,   //  =<network-id> Matches all or part of a network id.
-        type: "custom"|"builtin"// Filters networks by type. The custom keyword returns all user-defined networks.
+    filters?:  {       //  - JSON encoded network list filter. The filter value is one of:
+        name?: string[]  //  =<network-name> Matches all or part of a network name.
+        id?: string,   //  =<network-id> Matches all or part of a network id.
+        type?: "custom"|"builtin"// Filters networks by type. The custom keyword returns all user-defined networks.
     }
   }
 
@@ -272,7 +296,7 @@ declare namespace dockerode {
     modem: Modem;
     constructor(dockerHost?: any);
     pull(tag: string, auth: { "authconfig": AuthConfig }, done: DockerResponse<any>);
-    pull(tag: string, done: (err: ErrorObject, stream: NodeJS.ReadableStream) => any);
+    pull(tag: string, done: DockerResponse<NodeJS.ReadableStream>);
     listContainers(done: DockerResponse<ContainerInfo[]>);
     listContainers(options: ListConainersQueryParameters, done: DockerResponse<ContainerInfo[]>);
     getContainer(id: string): Container;
@@ -288,11 +312,10 @@ declare namespace dockerode {
      * start_options: any,  //- options used for container start. (optional)
      * callback: any      // - callback called when execution ends.
      */
-    run(image, cmd, stream, create_options?: CreateContainerOptions, start_options?: any, callback?);
-    //run(image, cmd, stream, callback);
-    createContainer(configuration: CreateContainerReq, callback: (err: ErrorObject, container: Container) => any);
-    getEvents(options: EventsQueryParameters, callback: (err: ErrorObject, events: NodeJS.ReadableStream) => any)
-    createNetwork(options: NetworkParameters, callback: (err: ErrorObject, network: { Id: string, Warning?: string }) => any)
+    run(image: string, cmd: string, stream: NodeJS.WritableStream[], create_options: ContainerCreateOptions, start_options?: ContainerStartOptions, done?: DockerResponse<Container>);
+    createContainer(configuration: CreateContainerReq, done: DockerResponse<Container>);
+    getEvents(options: EventsQueryParameters, done: DockerResponse<NodeJS.ReadableStream>);
+    createNetwork(options: NetworkParameters, done: DockerResponse<{ id: string, Warning?: string }>);
   }
 }
 

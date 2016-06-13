@@ -2,6 +2,7 @@ import fs = require("fs");
 import path = require("path");
 import Docker = require("dockerode");
 
+import {DockerodePromesied} from "./DockerodePromesied";
 import {DockerodeHandler} from "./DockerodeHandler";
 import {WorkspaceDefinition, WorkspaceStatus} from "./api";
 
@@ -9,26 +10,99 @@ export class Workspace {
   private workspaceDefinitionPath: string;
   private composeDefinition: any;
   private dockerWorkspaceHandler: DockerodeHandler;
+  private proxyContainer: dockerode.Container;
+  private static docker = new Docker();
+  private static dockerP = new DockerodePromesied(Workspace.docker, "workspace");
 
   constructor(public workspaceDefinition: WorkspaceDefinition, public workspaceId: string) {
-    let docker = new Docker();
-    this.dockerWorkspaceHandler = new DockerodeHandler(workspaceId, this.workspaceDefinition, docker);
+    this.dockerWorkspaceHandler = new DockerodeHandler(workspaceId, this.workspaceDefinition, Workspace.docker);
   }
 
-  private initialize() {
-    // this.workspaceDefinition = fs.readFileSync(this.workspaceDefinitionPath).toJSON();
+  public async start(progress?: (string) => any) {
+    let teamNetwork = await this.getTeamNetwork();
+    await this.dockerWorkspaceHandler.start(teamNetwork, progress);
+    await this.reloadWebProxy();
   }
 
-  public async start(progress? : (string) => any) {
-    await this.dockerWorkspaceHandler.start(progress);
-  }
-
-  public async delete(progress? : (string) => any) {
+  public async delete(progress?: (string) => any) {
     await this.dockerWorkspaceHandler.delete(progress);
   }
 
-  public async status() : Promise<WorkspaceStatus> {
-    return await this.dockerWorkspaceHandler.status();
+  public async status(): Promise<WorkspaceStatus> {
+    let status = await this.dockerWorkspaceHandler.status();
+    return status;
+  }
+
+  public async reloadWebProxy() {
+    await this.getTeamNetwork();
+    let proxys = await Workspace.dockerP.listContainers({ filters: { label: ["workspace=proxy", "workspace-team=" + this.teamName] } });
+    if (proxys.length === 0) {
+      let containerOptions: dockerode.CreateContainerReq = {
+        name: "workspace.proxy",
+        Image: "haproxy",
+        Tty: false,
+        Labels: { workspace: "proxy", "workspace-team": this.teamName },
+        ExposedPorts: {
+          "8080/tcp": {}
+        },
+        HostConfig: {
+          NetworkMode: this.teamName,
+          Binds: [`${path.join(process.cwd(), "haproxy.cfg")}:/usr/local/etc/haproxy/haproxy.cfg`],
+          PortBindings: { "8080/tcp": [{ HostPort: "8080" }] }
+        }
+      };
+
+      this.proxyContainer = await Workspace.dockerP.createContainer(containerOptions);
+      await Workspace.dockerP.startContainer(this.proxyContainer);
+    }
+    console.log("restarting proxy conf");
+    await this.regenerateHAProxyConf();
+    //await Workspace.dockerP.killContainer(this.proxyContainer, "HUP");
+    console.log("restarted");
+  }
+
+
+  public static async list(team?: string) {
+    let networks = await Workspace.dockerP.listNetworks({});
+    return networks.filter(network => team
+       ? network.Labels["workspace.team"]===team
+       : network.Labels["workspace.id"] !== undefined).map(network => network.Labels["workspace.id"]);
+  }
+  
+  public async regenerateHAProxyConf() {
+    let workspaceIds = await Workspace.list();
+    let statusesP = workspaceIds
+      .map(workspaceId => new Workspace(this.workspaceDefinition, workspaceId)) //FIXME: extract the definition using an special label in the workspace network
+      .map(ws => ws.status());
+    return await Promise.all(statusesP);
+  }
+
+  private systemNetwork: dockerode.Network;
+  private async getTeamNetwork() {
+    if (!this.systemNetwork) {
+      let workspaceSystemNetworkId: string;
+      let networks = await Workspace.dockerP.listNetworks({ filters: { name: [this.teamName] } });
+      let workspaceSystemNetworkInfo = networks[0];
+      if (!workspaceSystemNetworkInfo) {
+        let networkSettings: dockerode.NetworkParameters = {
+          Name: this.teamName,
+          CheckDuplicate: true,
+          Labels: {
+            "workspace": "true"
+          }
+        };
+        let result = await Workspace.dockerP.createNetwork(networkSettings);
+        workspaceSystemNetworkId = result.id;
+      } else {
+        workspaceSystemNetworkId = workspaceSystemNetworkInfo.Id;
+      }
+      this.systemNetwork = Workspace.docker.getNetwork(workspaceSystemNetworkId);
+    }
+    return this.systemNetwork;
+  }
+
+  private get teamName() {
+    return this.workspaceDefinition.team || "workspace.generic";
   }
 
 }

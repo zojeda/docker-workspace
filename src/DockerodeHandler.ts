@@ -1,12 +1,15 @@
 import nodePath = require("path");
 import {logger} from "./logger";
 
-import {WorkspaceDefinition, WorkspaceStatus, RuntimeDefinition} from "./api";
-
+import {WorkspaceDefinition, WorkspaceStatus, RuntimeDefinition, RuntimeStatus} from "./api";
+import {DockerodePromesied} from "./DockerodePromesied";
 export class DockerodeHandler {
 
   private allRuntimes = new Map<string, { path: string, application: RuntimeDefinition }>();
+  private dockerP: DockerodePromesied;
+
   constructor(private workspaceId: string, private workspaceDefinition: WorkspaceDefinition, private docker: dockerode.Docker) {
+    this.dockerP = new DockerodePromesied(docker, workspaceId);
     let services = this.workspaceDefinition.development.services;
     Object.keys(services).forEach((serviceName) => {
       this.allRuntimes.set(serviceName, { path: "development.services." + serviceName, application: services[serviceName] });
@@ -18,7 +21,7 @@ export class DockerodeHandler {
 
   }
 
-  public async start(progress?: (string) => any) {
+  public async start(teamNetwork: dockerode.Network, progress?: (string) => any) {
     progress && progress(`[ ${this.workspaceId} ]: starting`);
     try {
       if (!this.workspaceDefinition.development.code.bindToHostPath) {
@@ -26,9 +29,10 @@ export class DockerodeHandler {
       }
       progress && progress(`[ ${this.workspaceId} ]: creating network`);
       await this.createWorkspaceNetwork();
+
       let allstarts = Array.from(this.allRuntimes.keys()).map((name) => {
         let definition = this.allRuntimes.get(name);
-        return this.startRuntime(name, definition.path, definition.application, progress);
+        return this.startRuntime(name, definition.path, definition.application, teamNetwork, progress);
       });
       await Promise.all(allstarts);
       logger.info("[ %s ]: workspace started", this.workspaceId);
@@ -46,20 +50,28 @@ export class DockerodeHandler {
     }
     try {
       let status: WorkspaceStatus = {
-        definition: this.workspaceDefinition,
-        status: {}
+        workspaceId: this.workspaceId,
+        runtimes: {}
       };
       containers.forEach((containerInfo) => {
         let runtimeDefinition = this.getRuntimeDefinitionByPath(containerInfo);
-        status.status[containerInfo.Labels["workspace.application.path"]] = {
+        let networkSettings = containerInfo.NetworkSettings;
+        let runtimeStatus: RuntimeStatus  = status.runtimes[containerInfo.Labels["workspace.application.path"]] = {
           status: containerInfo.Status,
           type: runtimeDefinition.type,
           network: {
-            ip: containerInfo.NetworkSettings.Networks[this.workspaceId].IPAddress,
-            port: runtimeDefinition.port
+            ip: networkSettings.Networks[this.workspaceId].IPAddress,
+            port: runtimeDefinition.port,
+            additional: {}
           },
           definition: runtimeDefinition
-        }; //containerInfo.Ports;
+        };
+        Object.keys(networkSettings.Networks).forEach((networkName) => {
+          let network = networkSettings.Networks[networkName];
+          if(networkName != this.workspaceId) {
+            runtimeStatus.network.additional[networkName] = network.IPAddress;
+          }
+        });
       });
       return status;
     } catch (error) {
@@ -73,7 +85,7 @@ export class DockerodeHandler {
       let containers = await this.listWorkspaceContainers();
       await Promise.all(containers.map((container) => this.removeContainer(container)));
       await this.removeWorkspaceNetwork();
-      progress(`[ ${this.workspaceId} ]: workspace deleted`);
+      progress && progress(`[ ${this.workspaceId} ]: workspace deleted`);
       logger.info("[ %s ]: workspace deleted", this.workspaceId);
     } catch (error) {
       logger.error("[ %s ]: error deleting workspace", this.workspaceId, error);
@@ -82,12 +94,12 @@ export class DockerodeHandler {
   }
 
 
-  public async startRuntime(name: string, path: string, app: RuntimeDefinition, progress?: (string) => any) {
+  public async startRuntime(name: string, path: string, app: RuntimeDefinition,
+        teamNetwork: dockerode.Network,  progress?: (string) => any) {
     // await this.pull(app.image, progress);
     let containerName = name + "." + this.workspaceId;
     let commandArray = app.command && ["bash", "-c", app.command];
     let containerImage = app.image || this.workspaceDefinition.development.image;
-    let createContainer = this.promisifyDocker1Arg("create container", this.docker.createContainer);
     let bindCodeTo = this.workspaceDefinition.development.code.bindToHostPath || this.workspaceId;
 
     let containerOptions: dockerode.CreateContainerReq = {
@@ -109,18 +121,22 @@ export class DockerodeHandler {
         Binds: [nodePath.resolve(bindCodeTo) + ":" + this.workspaceDefinition.development.code.path]
       }
     };
+    if (app.port) {
+      let port = app.port + "/tcp";
+      containerOptions.ExposedPorts = {};
+      containerOptions.ExposedPorts[port] = {};
+    }
     this.allRuntimes.forEach((runtime) => {
       let otherRuntime = runtime.path.split(".").slice(-1)[0];
       let linkName = `${otherRuntime}.${this.workspaceId}`;
       if (linkName != containerName) {
-        containerOptions.HostConfig.Links.push(`${linkName}:${otherRuntime}`);
+               containerOptions.HostConfig.Links.push(`${linkName}:${otherRuntime}`);
       }
     });
-    let container = await createContainer(containerOptions);
-    let startContainer = this.promisifyDocker("create container", container.start, { context: container });
+    let container = await this.dockerP.createContainer(containerOptions);
     progress && progress(`[ ${this.workspaceId} ]: starting '${name}'`);
-    await startContainer();
-
+    await this.dockerP.startContainer(container);
+    await this.dockerP.connectContainerToNetwork(container.id, teamNetwork);
     logger.debug("[ %s ]: started '%s' ", this.workspaceId, name);
   }
 
@@ -130,69 +146,29 @@ export class DockerodeHandler {
       CheckDuplicate: true,
       Labels: {
         "workspace": "true",
-        "workspace.id": this.workspaceId
+        "workspace.id": this.workspaceId,
+        "workspace.team": this.workspaceDefinition.team
       }
     };
-    let createNetwork = this.promisifyDocker1Arg("creating network", this.docker.createNetwork);
-    return createNetwork(networkSettings);
+    return this.dockerP.createNetwork(networkSettings);
   }
 
   private removeWorkspaceNetwork() {
     let network = this.docker.getNetwork(this.workspaceId);
-    let removeNetwork = this.promisifyDocker("removing network", network.remove, { context: network });
-    return removeNetwork();
+    return this.dockerP.removeNetwork(network);
   }
 
   private removeContainer(containerInfo: dockerode.ContainerInfo) {
     logger.info("[ %s ]: removing container : ", this.workspaceId, containerInfo.Names);
     let container = this.docker.getContainer(containerInfo.Id);
-    let removeContainer = this.promisifyDocker1Arg(`removing container [${containerInfo.Names}]`, container.remove, { context: container });
-    return removeContainer({ force: true });
+    return this.dockerP.removeContainer(container, { force: true });
   }
 
   private listWorkspaceContainers() {
-    return this.listContainers({
+    return this.dockerP.listContainers({
       all: true,
       filters: { label: [`workspace.id=${this.workspaceId}`] }
     });
-  }
-
-
-
-  //-------------------   utility methods to promisify docker calls   --------------------//
-  // TODO: move this to its own reusable module
-  private listContainers = this.promisifyDocker1Arg("listing containers", this.docker.listContainers);
-  private listNetworks = this.promisifyDocker1Arg("listing networks", this.docker.listNetworks);
-
-  private promisifyDocker1Arg<A1, T>(message: string, method: (arg1: A1, callback: (err, response: T) => any) => any, context?: { context: any }): (arg: A1) => Promise<T> {
-    let contextCall = context ? context.context : this.docker;
-    return (arg: A1) => {
-      return new Promise<T>((resolve, reject) => {
-        method.call(contextCall, arg, (error, result) => {
-          if (error) {
-            logger.error("[ %s ] %s ", this.workspaceId, message, error);
-            return reject(error);
-          }
-          logger.debug("[ %s ]: '%s' result - ", this.workspaceId, message, result);
-          resolve(result);
-        });
-      });
-    };
-  }
-  private promisifyDocker<T>(message: string, method: (callback: (err, response: T) => any) => any, context?: { context: any }): () => Promise<T> {
-    let contextCall = context ? context.context : this.docker;
-    return () => {
-      return new Promise<T>((resolve, reject) => {
-        method.call(contextCall, (error, result) => {
-          if (error) {
-            logger.error("[ %s ] %s ", this.workspaceId, message, error);
-            return reject(error);
-          }
-          logger.debug("[ %s ]: '%s' result - ", this.workspaceId, message, result);
-          resolve(result);
-        });
-      });
-    };
   }
 
   private getRuntimeDefinitionByPath(containerInfo: dockerode.ContainerInfo): RuntimeDefinition {

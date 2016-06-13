@@ -29,20 +29,23 @@ export interface DevelopmentEnvironment {
 
 export interface WorkspaceDefinition {
   development: DevelopmentEnvironment;
+  team?: string;
+}
+
+export interface RuntimeStatus {
+  status: string;
+  type: string;
+  network: {
+    ip: string,
+    port: number,
+    additional?: {[networkName: string]: string}
+  };
+  definition: RuntimeDefinition;
 }
 
 export interface WorkspaceStatus {
-  definition: WorkspaceDefinition;
-  status: {[path: string]: {
-    status: string,
-    type: string,
-    network: {
-      ip: string,
-      port: number,
-      externalUrl?: string
-    },
-    definition: RuntimeDefinition
-  }};
+  workspaceId: string;
+  runtimes: { [path: string]: RuntimeStatus };
 }
 
 export {Workspace} from "./Workspace";

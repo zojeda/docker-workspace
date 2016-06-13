@@ -2,5 +2,8 @@
   "globalDependencies": {
     "node": "registry:dt/node#6.0.0+20160602155235",
     "winston": "registry:dt/winston#0.0.0+20160417152829"
+  },
+  "dependencies": {
+    "yargs": "registry:npm/yargs#3.31.0+20160316010718"
   }
 }
