@@ -8,9 +8,9 @@
   },
   "typings": "dist/api.d.ts",
   "scripts": {
-    "build": "tsc -p .",
+    "compile": "tsc -p .",
     "typings": "typings install",
-    "prepublish": "npm build"
+    "prepublish": "npm run compile"
   },
   "author": "Zacarias F. Ojeda <zojeda@gmail.com>",
   "license": "ISC",
