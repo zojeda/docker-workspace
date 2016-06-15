@@ -2,7 +2,8 @@ import fs = require("fs");
 import os = require("os");
 import path = require("path");
 
-import { Provisioner, WorkspaceDefinition } from "./api";
+import { WorkspaceDefinition } from "./api";
+import { Provisioner} from "./Provisioner";
 import { logger } from "./logger";
 
 var tar = require("tar-fs");

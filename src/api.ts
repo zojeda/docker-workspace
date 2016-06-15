@@ -48,8 +48,4 @@ export interface WorkspaceStatus {
   runtimes: { [path: string]: RuntimeStatus };
 }
 
-export interface Provisioner {
-  addContent(workspaceId: string, definition: WorkspaceDefinition, container: dockerode.Container, progress:(string) => void) : Promise<void>;
-}
-
 export {Workspace} from "./Workspace";

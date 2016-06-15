@@ -5,10 +5,13 @@ import {
   WorkspaceDefinition,
   WorkspaceStatus,
   RuntimeDefinition,
-  RuntimeStatus,
-  Provisioner } from "./api";
+  RuntimeStatus
+} from "./api";
+
 import {DockerodePromesied} from "./DockerodePromesied";
 
+
+import { Provisioner} from "./Provisioner";
 import {FSCopyProvisioner} from "./FSCopyProvisioner";
 
 const PROVISIONERS = {
