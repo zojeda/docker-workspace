@@ -7,14 +7,16 @@ import {DockerodePromesied} from "./DockerodePromesied";
 import {DockerodeHandler} from "./DockerodeHandler";
 import {WorkspaceDefinition, WorkspaceStatus} from "./api";
 import {logger} from "./logger";
+
 var Handlebars = require("handlebars");
+var dockerOpts = require("dockerode-options");
 
 export class Workspace {
   private workspaceDefinitionPath: string;
   private composeDefinition: any;
   private dockerWorkspaceHandler: DockerodeHandler;
   private proxyContainer: dockerode.Container;
-  private static docker = new Docker();
+  private static docker = new Docker(dockerOpts());
   private static dockerP = new DockerodePromesied(Workspace.docker, "workspace");
 
   constructor(public workspaceDefinition: WorkspaceDefinition, public workspaceId: string) {

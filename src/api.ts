@@ -19,7 +19,7 @@ export interface DevelopmentEnvironment {
   code: {
     path: string,
     bindToHostPath?: string, //absolute path
-    provision?: { [name: string]: any };
+    provisions?: { name: string, params: any }[];
   };
   commands?: { [name: string]: CommandDefinition };
   tools: { [name: string]: RuntimeDefinition };
@@ -46,6 +46,10 @@ export interface RuntimeStatus {
 export interface WorkspaceStatus {
   workspaceId: string;
   runtimes: { [path: string]: RuntimeStatus };
+}
+
+export interface Provisioner {
+  addContent(workspaceId: string, definition: WorkspaceDefinition, container: dockerode.Container, progress:(string) => void) : Promise<void>;
 }
 
 export {Workspace} from "./Workspace";

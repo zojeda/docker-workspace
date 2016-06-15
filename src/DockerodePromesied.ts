@@ -5,9 +5,11 @@ export class DockerodePromesied {
   constructor(private docker: dockerode.Docker, private logMark: string) {}
   public listContainers = this.promisifyDocker1Arg("listing containers", this.docker.listContainers);
   public listNetworks = this.promisifyDocker1Arg("listing networks", this.docker.listNetworks);
+  public listVolumes = this.promisifyDocker("listing volumes", this.docker.listVolumes);
   public run = this.promisifyDocker5Arg("running container", this.docker.run);
   public createContainer = this.promisifyDocker1Arg("creating container", this.docker.createContainer);
   public createNetwork = this.promisifyDocker1Arg("creating network", this.docker.createNetwork);
+  public createVolume = this.promisifyDocker1Arg("creating volume", this.docker.createVolume);
 
 
   public startContainer(container: dockerode.Container) {

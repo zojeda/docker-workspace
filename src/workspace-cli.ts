@@ -9,17 +9,17 @@ import {Workspace, WorkspaceDefinition} from "./api";
 var prettyjson = require("prettyjson");
 
 yargs
-    .usage("Usage: $0 <command> [options]")
-    .command("start", "Start a workspace from a definition", startWorkspace)
-    .command("stop", "Stop a running workspace", stopWorkspace)
-    .command("status", "get the status of a running workspace", statusWorkspace)
-    .command("list", "list all running workspaces", listWorkspaces)
-    .demand(1)
+  .usage("Usage: $0 <command> [options]")
+  .command("start", "Start a workspace from a definition", startWorkspace)
+  .command("stop", "Stop a running workspace", stopWorkspace)
+  .command("status", "get the status of a running workspace", statusWorkspace)
+  .command("list", "list all running workspaces", listWorkspaces)
+  .demand(1)
 
-    .help("h")
-    .alias("h", "help")
-    .epilog("copyright 2016")
-    .argv;
+  .help("h")
+  .alias("h", "help")
+  .epilog("copyright 2016")
+  .argv;
 
 
 function startWorkspace(ya: yargs.Yargs) {
@@ -38,12 +38,16 @@ function startWorkspace(ya: yargs.Yargs) {
     .alias("h", "help")
     .argv;
 
-  let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
-  workspaceIds.forEach(workspaceId => {
-    let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
-    let workspace = new Workspace(workspaceDefinition, workspaceId);
-    workspace.start();
-  });
+  try {
+    let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
+    workspaceIds.forEach(workspaceId => {
+      let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
+      let workspace = new Workspace(workspaceDefinition, workspaceId);
+      workspace.start();
+    });
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function stopWorkspace(ya: yargs.Yargs) {
@@ -64,7 +68,7 @@ function stopWorkspace(ya: yargs.Yargs) {
 
   let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
   workspaceIds.forEach(workspaceId => {
-    let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
+    let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
     let workspace = new Workspace(workspaceDefinition, workspaceId);
     workspace.delete();
   });
@@ -80,7 +84,7 @@ function statusWorkspace(ya: yargs.Yargs) {
 
   let workspaceId = argv._[1] || path.basename(process.cwd());
   console.log("getting status workspace with id :", workspaceId);
-  let workspaceDefinition : WorkspaceDefinition = JSON.parse(fs.readFileSync("workspace-definition.json").toString());
+  let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync("workspace-definition.json").toString());
   let workspace = new Workspace(workspaceDefinition, workspaceId);
   workspace.status()
     .then(status => console.log(prettyjson.render(status)))

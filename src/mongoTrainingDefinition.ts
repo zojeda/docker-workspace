@@ -6,7 +6,8 @@ export let capaMongoWorkspace: WorkspaceDefinition = {
     code: {
       path: "/capacitacion-mongo",
       bindToHostPath: "../content",
-      provision: [{"fs-copy": { path: "../content"}}]},
+      provisions: [{name: "fsCopy", params: { path: "../hx-capa-mongo/hx-capa-mongo"}}]
+    },
     tools: {
       cloud9: {
         command: "node /cloud9/server.js --listen 0.0.0.0 -a : -w /capacitacion-mongo",

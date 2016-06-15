@@ -6,7 +6,7 @@ export let workspaceDefinition: WorkspaceDefinition = {
     ports: [5858, 3000, 5000],
     code: {
       path: "/sample-project",
-      provision: { "fs-copy" : {path: "../content"}}
+      provisions: [{ name: "fs-copy", params: {path: "../content"}}]
     },
     commands: {
       start: { description: "Start the application", style: "fa fa-play" },

@@ -90,6 +90,20 @@ declare namespace dockerode {
     Image: string;
   }
 
+  interface CreateVolumeOptions {
+    Name: string,
+    Labels: Labels
+  }
+
+  interface VolumesInfo {
+    Volumes: {
+      Name: string,
+      Driver: string,
+      Mountpoint: string,
+      Labels: Labels
+    }[]
+  }
+
   interface ContainerInfo {
     Id: string;
     Names: string[];
@@ -177,7 +191,11 @@ declare namespace dockerode {
    }
   interface ContainerRemoveOptions {
      v?: boolean, force?: boolean
-  }    
+  }
+  interface PutArchiveOptions {
+      path: string,                  // - path to a directory in the container to extract the archive’s contents into. Required 
+      noOverwriteDirNonDir?: boolean  // - If “1”, “true”, or “True” then it will be an error if unpacking the given content would cause an existing directory to be replaced with a non-directory and vice versa.
+  }
   interface Container {
     id: string;
     inspect(options: {
@@ -206,7 +224,7 @@ declare namespace dockerode {
     //copy
     //getArchive
     //infoArchive
-    //putArchivo
+    putArchive(tarPath: string, options: PutArchiveOptions, done: DockerResponse<void>);
     logs(options: {
       follow?: boolean; // - 1/True/true or 0/False/false, return stream. Default false.
       stdout?: boolean, // – 1/True/true or 0/False/false, show stdout log. Default false.
@@ -221,6 +239,11 @@ declare namespace dockerode {
   interface Network {
     remove(done: DockerResponse<any>);
     connect({Container: string}, done: DockerResponse<void>);
+  }
+
+  interface Volume {
+    //inspect
+    //remove
   }
 
   interface ListConainersQueryParameters {
@@ -302,6 +325,7 @@ declare namespace dockerode {
     getContainer(id: string): Container;
     listNetworks(done: DockerResponse<NetworkInfo[]>);
     listNetworks(options: ListNetworksQueryParameters, done: DockerResponse<NetworkInfo[]>);
+    listVolumes(done: DockerResponse<VolumesInfo>);
     getNetwork(id: string): Network;
 
     /**
@@ -314,6 +338,7 @@ declare namespace dockerode {
      */
     run(image: string, cmd: string, stream: NodeJS.WritableStream[], create_options: ContainerCreateOptions, start_options?: ContainerStartOptions, done?: DockerResponse<Container>);
     createContainer(configuration: CreateContainerReq, done: DockerResponse<Container>);
+    createVolume(options: CreateVolumeOptions, done: DockerResponse<Volume>);
     getEvents(options: EventsQueryParameters, done: DockerResponse<NodeJS.ReadableStream>);
     createNetwork(options: NetworkParameters, done: DockerResponse<{ id: string, Warning?: string }>);
   }

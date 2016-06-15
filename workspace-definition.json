@@ -3,14 +3,7 @@
     "image": "zojeda/mongo-training",
     "code": {
       "path": "/capacitacion-mongo",
-      "bindToHostPath": "../content",
-      "provision": [
-        {
-          "fs-copy": {
-            "path": "../content"
-          }
-        }
-      ]
+      "provisions": [{ "name": "fsCopy", "params": {"path": "../hexacta/capa-mongo/hx-capa-mongo"}}]
     },
     "tools": {
       "cloud9": {
