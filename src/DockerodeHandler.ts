@@ -56,7 +56,7 @@ export class DockerodeHandler {
 
       // only running provision if the workspace volume was just created
       // reusing existing one otherwise
-      if(!workspaceCreated) {
+      if(workspaceCreated) {
         await this.runProvisioning(progress);
       }
 
@@ -206,7 +206,7 @@ export class DockerodeHandler {
   }
 
   private async runProvisioning(progress: (string) => void) {
-    logger.debug("[ %s ] starting provision : ", this.workspaceId);
+    logger.info("[ %s ] starting provision : ", this.workspaceId);
     let provisions = this.workspaceDefinition.development.code.provisions;
     if (provisions && provisions.length > 0) {
       // pick the first container and perform the provision using it
