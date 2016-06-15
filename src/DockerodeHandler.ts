@@ -131,7 +131,6 @@ export class DockerodeHandler {
     const containerOptions: dockerode.CreateContainerReq = {
       name: containerName,
       Hostname: name,
-      Domainname: this.workspaceId,
       Image: containerImage,
       Tty: false,
       Labels: {
@@ -145,6 +144,9 @@ export class DockerodeHandler {
         NetworkMode: this.workspaceId,
         Links: [],
         Binds: [bindCodeTo + ":" + this.workspaceDefinition.development.code.path]
+      },
+      NetworkingConfig: {
+        EndpointsConfig: {}
       }
     };
     if (app.port) {
@@ -152,6 +154,9 @@ export class DockerodeHandler {
       containerOptions.ExposedPorts = {};
       containerOptions.ExposedPorts[port] = {};
     }
+    containerOptions.NetworkingConfig.EndpointsConfig[this.workspaceId] = {
+      Aliases: [name]
+    };
     this.allRuntimes.forEach((runtime) => {
       let otherRuntime = runtime.path.split(".").slice(-1)[0];
       let linkName = `${otherRuntime}.${this.workspaceId}`;
@@ -206,7 +211,7 @@ export class DockerodeHandler {
   }
 
   private async runProvisioning(progress: (string) => void) {
-    logger.info("[ %s ] starting provision : ", this.workspaceId);
+    logger.info("[ %s ] starting provision ", this.workspaceId);
     let provisions = this.workspaceDefinition.development.code.provisions;
     if (provisions && provisions.length > 0) {
       // pick the first container and perform the provision using it

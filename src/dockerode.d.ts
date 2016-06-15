@@ -83,8 +83,20 @@ declare namespace dockerode {
       CgroupParent?: string;
       VolumeDriver?: string;
       ShmSize?: number;
-    };
+    },
+    NetworkingConfig?: {
+      EndpointsConfig: {
+          [name: string]: {
+              IPAMConfig?: {
+                  [name: string]: string
+              },
+              Links?: string[],
+              Aliases?: string[]
+          }
+      };
+    }
   }
+  
 
   interface CreateContainerReq extends ContainerCreateOptions {
     Image: string;
