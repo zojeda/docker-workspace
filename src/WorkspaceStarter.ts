@@ -19,7 +19,7 @@ const PROVISIONERS = {
 };
 
 
-export class DockerodeHandler {
+export class WorkspaceStarter {
 
   private allRuntimes = new Map<string, { path: string, application: RuntimeDefinition }>();
   private dockerP: DockerodePromesied;
@@ -38,10 +38,12 @@ export class DockerodeHandler {
   }
 
   public async start(teamNetwork: dockerode.Network, progress?: (string) => any) {
+    console.log("starting");
     progress && progress(`[ ${this.workspaceId} ] starting`);
     try {
       let workspaceCreated = false;
       if (!this.workspaceDefinition.development.code.bindToHostPath) {
+        console.log("creating volume");
         progress && progress(`[ ${this.workspaceId} ] creating volume`);
         workspaceCreated = await this.createWorkspaceVolume();
       }
@@ -164,7 +166,7 @@ export class DockerodeHandler {
         containerOptions.HostConfig.Links.push(`${linkName}:${otherRuntime}`);
       }
     });
-    let container = await this.dockerP.createContainer(containerOptions);
+    let container = await this.docker.createContainer(containerOptions);
     progress && progress(`[ ${this.workspaceId} ] starting '${name}'`);
     await this.dockerP.startContainer(container);
     await this.dockerP.connectContainerToNetwork(container.id, teamNetwork);
@@ -181,7 +183,7 @@ export class DockerodeHandler {
         "workspace.team": this.workspaceDefinition.team
       }
     };
-    return this.dockerP.createNetwork(networkSettings);
+    return this.docker.createNetwork(networkSettings);
   }
 
   private removeWorkspaceNetwork() {
@@ -190,8 +192,8 @@ export class DockerodeHandler {
   }
 
   private async createWorkspaceVolume() {
-    const volumes = await this.dockerP.listVolumes();
-    const workspaceVolumeExists = volumes.Volumes.some(volume => volume.Name === this.workspaceId);
+    const volumes = await this.docker.listVolumes();
+    const workspaceVolumeExists = volumes.Volumes && volumes.Volumes.some(volume => volume.Name === this.workspaceId);
     if(workspaceVolumeExists) {
       logger.info("[ %s ] using existing volume ", this.workspaceId);
       return false;
@@ -206,7 +208,7 @@ export class DockerodeHandler {
     };
 
     logger.info("[ %s ] creating a new volume", this.workspaceId);
-    await this.dockerP.createVolume(volumeOptions);
+    await this.docker.createVolume(volumeOptions);
     return true;
   }
 
@@ -235,7 +237,7 @@ export class DockerodeHandler {
   }
 
   private listWorkspaceContainers() {
-    return this.dockerP.listContainers({
+    return this.docker.listContainers({
       all: true,
       filters: { label: [`workspace.id=${this.workspaceId}`] }
     });

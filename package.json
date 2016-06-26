@@ -10,7 +10,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "typings": "typings install",
-    "prepublish": "npm run compile"
+    "prepublish": "npm run typings && npm run compile"
   },
   "author": "Zacarias F. Ojeda <zojeda@gmail.com>",
   "license": "ISC",

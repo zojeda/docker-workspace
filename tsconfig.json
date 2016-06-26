@@ -3,7 +3,8 @@
     "module": "commonjs",
     "target": "es6",
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "inlineSourceMap": true
   },
   "exclude": [
     "typings/browser.d.ts",

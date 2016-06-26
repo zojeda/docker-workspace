@@ -9,7 +9,7 @@ import {Workspace, WorkspaceDefinition} from "./api";
 var prettyjson = require("prettyjson");
 
 yargs
-  .usage("Usage: $0 <command> [options]")
+  .usage("Usage: dw <command> [options]")
   .command("start", "Start a workspace from a definition", startWorkspace)
   .command("stop", "Stop a running workspace", stopWorkspace)
   .command("status", "get the status of a running workspace", statusWorkspace)
@@ -22,10 +22,10 @@ yargs
   .argv;
 
 
-function startWorkspace(ya: yargs.Yargs) {
+function  startWorkspace(ya: yargs.Yargs) {
   let argv = ya
-    .usage("usage: $0 start [workspaceIds] [options]")
-    .example("$0 <command> -w <workspace-def.json>", "start one or more workspaces with provided ids")
+    .usage("usage: dw start [workspaceIds] [options]")
+    .example("dw <command> -w <workspace-def.json>", "start one or more workspaces with provided ids")
     .options({
       w: {
         alias: "ws-def",
@@ -40,11 +40,13 @@ function startWorkspace(ya: yargs.Yargs) {
 
   try {
     let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
+    let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
+    console.log("starting : ", workspaceIds)
     workspaceIds.forEach(workspaceId => {
-      let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
       let workspace = new Workspace(workspaceDefinition, workspaceId);
-      workspace.start();
+      workspace.start(console.log);
     });
+    setTimeout(() => console.log("completo..."), 500000);
   } catch (error) {
     console.error(error);
   }
@@ -52,8 +54,8 @@ function startWorkspace(ya: yargs.Yargs) {
 
 function stopWorkspace(ya: yargs.Yargs) {
   let argv = ya
-    .usage("usage: $0 stop [workspaceId]")
-    .example("$0 <command>", "stop one or more workspaces with provided ids")
+    .usage("usage: dw stop [workspaceId]")
+    .example("dw <command>", "stop one or more workspaces with provided ids")
     .options({
       w: {
         alias: "ws-def",
@@ -76,8 +78,8 @@ function stopWorkspace(ya: yargs.Yargs) {
 
 function statusWorkspace(ya: yargs.Yargs) {
   let argv = ya
-    .usage("usage: $0 status [workspaceId]")
-    .example("$0 <command>", "get the runtime status of workspace with the given id")
+    .usage("usage: dw status [workspaceId]")
+    .example("dw <command>", "get the runtime status of workspace with the given id")
     .help("h")
     .alias("h", "help")
     .argv;
@@ -93,8 +95,8 @@ function statusWorkspace(ya: yargs.Yargs) {
 
 function listWorkspaces(ya: yargs.Yargs) {
   let argv = ya
-    .usage("usage: $0 list [team]")
-    .example("$0 <command>", "list all active workspaces in the given team")
+    .usage("usage: dw list [team]")
+    .example("dw <command>", "list all active workspaces in the given team")
     .help("h")
     .alias("h", "help")
     .argv;

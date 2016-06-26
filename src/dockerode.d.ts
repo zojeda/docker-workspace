@@ -332,12 +332,12 @@ declare namespace dockerode {
     constructor(dockerHost?: any);
     pull(tag: string, auth: { "authconfig": AuthConfig }, done: DockerResponse<any>);
     pull(tag: string, done: DockerResponse<NodeJS.ReadableStream>);
-    listContainers(done: DockerResponse<ContainerInfo[]>);
-    listContainers(options: ListConainersQueryParameters, done: DockerResponse<ContainerInfo[]>);
+    listContainers() : Promise<ContainerInfo[]>;
+    listContainers(options: ListConainersQueryParameters) : Promise<ContainerInfo[]>;
     getContainer(id: string): Container;
-    listNetworks(done: DockerResponse<NetworkInfo[]>);
-    listNetworks(options: ListNetworksQueryParameters, done: DockerResponse<NetworkInfo[]>);
-    listVolumes(done: DockerResponse<VolumesInfo>);
+    listNetworks() : Promise<NetworkInfo[]>;
+    listNetworks(options: ListNetworksQueryParameters) : Promise<NetworkInfo[]>;
+    listVolumes() : Promise<VolumesInfo>;
     getNetwork(id: string): Network;
 
     /**
@@ -349,10 +349,10 @@ declare namespace dockerode {
      * callback: any      // - callback called when execution ends.
      */
     run(image: string, cmd: string, stream: NodeJS.WritableStream[], create_options: ContainerCreateOptions, start_options?: ContainerStartOptions, done?: DockerResponse<Container>);
-    createContainer(configuration: CreateContainerReq, done: DockerResponse<Container>);
-    createVolume(options: CreateVolumeOptions, done: DockerResponse<Volume>);
+    createContainer(configuration: CreateContainerReq) : Promise<Container>;
+    createVolume(options: CreateVolumeOptions) : Promise<Volume>;
     getEvents(options: EventsQueryParameters, done: DockerResponse<NodeJS.ReadableStream>);
-    createNetwork(options: NetworkParameters, done: DockerResponse<{ id: string, Warning?: string }>);
+    createNetwork(options: NetworkParameters) : Promise<{ id: string, Warning?: string }>;
   }
 }
 

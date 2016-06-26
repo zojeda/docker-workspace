@@ -15,7 +15,7 @@ export let logger = new (winston.Logger)({
     // }),
     new winston.transports.Console({
       colorize: true,
-      level: "info",
+      level: "debug",
       timestamp: function() {
         return new Date().toISOString();
       }})
