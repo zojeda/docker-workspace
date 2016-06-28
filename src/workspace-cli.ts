@@ -8,8 +8,8 @@ import {Workspace, WorkspaceDefinition} from "./api";
 
 var prettyjson = require("prettyjson");
 
-import {capaMongoWorkspace} from './mongoTrainingDefinition.ts';
-fs.writeFileSync('./workspace-definition.json', JSON.stringify(capaMongoWorkspace, null, 2));
+// import {capaMongoWorkspace} from './mongoTrainingDefinition.ts';
+// fs.writeFileSync('./workspace-definition.json', JSON.stringify(capaMongoWorkspace, null, 2));
 
 yargs
   .usage("Usage: dw <command> [options]")
