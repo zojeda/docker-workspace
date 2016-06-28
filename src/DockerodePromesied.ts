@@ -3,15 +3,7 @@ import {logger} from "./logger";
 
 export class DockerodePromesied {
   constructor(private docker: dockerode.Docker, private logMark: string) {}
-  public run = this.promisifyDocker5Arg("running container", this.docker.run);
-
-  public removeContainer(container: dockerode.Container, options: dockerode.ContainerRemoveOptions) {
-    return this.promisifyDocker1Arg("remove container", container.remove, { context: container })(options);
-  };
-  public removeNetwork(network: dockerode.Network) {
-    return this.promisifyDocker("removing network", network.remove, { context: network })();
-  };
-
+  
 
 
 

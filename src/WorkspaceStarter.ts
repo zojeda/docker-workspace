@@ -76,56 +76,6 @@ export class WorkspaceStarter {
     }
   }
 
-  public async status() {
-    let containers = await this.listWorkspaceContainers();
-    if (containers.length === 0) {
-      logger.error("[ %s ] workspace does not exist", this.workspaceId);
-      throw new Error("workspace does not exist");
-    }
-    try {
-      let status: WorkspaceStatus = {
-        workspaceId: this.workspaceId,
-        runtimes: {}
-      };
-      containers.forEach((containerInfo) => {
-        let runtimeDefinition = this.getRuntimeDefinitionByPath(containerInfo);
-        let networkSettings = containerInfo.NetworkSettings;
-        let runtimeStatus: RuntimeStatus = status.runtimes[containerInfo.Labels["workspace.application.path"]] = {
-          status: containerInfo.Status,
-          type: runtimeDefinition.type,
-          network: {
-            ip: networkSettings.Networks[this.workspaceId].IPAddress,
-            port: runtimeDefinition.port,
-            additional: {}
-          },
-          definition: runtimeDefinition
-        };
-        Object.keys(networkSettings.Networks).forEach((networkName) => {
-          let network = networkSettings.Networks[networkName];
-          if (networkName != this.workspaceId) {
-            runtimeStatus.network.additional[networkName] = network.IPAddress;
-          }
-        });
-      });
-      return status;
-    } catch (error) {
-      logger.error("[ %s ] error getting status", this.workspaceId, error);
-      throw error;
-    }
-  }
-
-  public async delete(progress?: (string) => any) {
-    try {
-      let containers = await this.listWorkspaceContainers();
-      await Promise.all(containers.map((container) => this.removeContainer(container)));
-      await this.removeWorkspaceNetwork();
-      progress && progress(`[ ${this.workspaceId} ] workspace deleted`);
-      logger.info("[ %s ] workspace deleted", this.workspaceId);
-    } catch (error) {
-      logger.error("[ %s ] error deleting workspace", this.workspaceId, error);
-      throw error;
-    }
-  }
 
 
   public async startRuntime(name: string, path: string, app: RuntimeDefinition,
@@ -185,7 +135,8 @@ export class WorkspaceStarter {
 
     if (typeof imageDefinition === "string") {
       // pull the image
-      const pullStream = await this.docker.pull(imageDefinition)
+      const imageName = imageDefinition.indexOf(':') != -1 ? imageDefinition : imageDefinition+':latest';
+      const pullStream = await this.docker.pull(imageName);
       util.progressBars(pullStream, process.stdout);
       await streamToPromise(pullStream);
       return imageDefinition;
@@ -220,16 +171,13 @@ export class WorkspaceStarter {
       Labels: {
         "workspace": "true",
         "workspace.id": this.workspaceId,
+        "workspace.definition": JSON.stringify(this.workspaceDefinition),
         "workspace.team": this.workspaceDefinition.team
       }
     };
     return this.docker.createNetwork(networkSettings);
   }
 
-  private removeWorkspaceNetwork() {
-    let network = this.docker.getNetwork(this.workspaceId);
-    return this.dockerP.removeNetwork(network);
-  }
 
   private async createWorkspaceVolume() {
     const volumes = await this.docker.listVolumes();
@@ -270,12 +218,6 @@ export class WorkspaceStarter {
     }
   }
 
-  private removeContainer(containerInfo: dockerode.ContainerInfo) {
-    logger.debug("[ %s ] removing container : ", this.workspaceId, containerInfo.Names);
-    let container = this.docker.getContainer(containerInfo.Id);
-    return this.dockerP.removeContainer(container, { force: true });
-  }
-
   private async listWorkspaceContainers() {
     // return await this.docker.listContainers({
     //   all: true,
@@ -287,13 +229,6 @@ export class WorkspaceStarter {
     });    
   }
 
-  private getRuntimeDefinitionByPath(containerInfo: dockerode.ContainerInfo): RuntimeDefinition {
-    let path = containerInfo.Labels["workspace.application.path"];
-    let lastNode = this.workspaceDefinition as any;
-    path.split(".").forEach(node => {
-      lastNode = lastNode[node];
-    });
-    return lastNode;
-  }
+
 
 }

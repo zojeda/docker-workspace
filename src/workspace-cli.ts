@@ -46,8 +46,8 @@ function  startWorkspace(ya: yargs.Yargs) {
     let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
     console.log("starting : ", workspaceIds)
     let starts = workspaceIds.map(workspaceId => {
-      let workspace = new Workspace(workspaceDefinition, workspaceId);
-      workspace.start(console.log);
+      let workspace = new Workspace(workspaceId);
+      workspace.start(workspaceDefinition, console.log);
     });
     Promise.all(starts).then(() => "all started");
   } catch (error) {
@@ -74,7 +74,7 @@ function stopWorkspace(ya: yargs.Yargs) {
   let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
   workspaceIds.forEach(workspaceId => {
     let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
-    let workspace = new Workspace(workspaceDefinition, workspaceId);
+    let workspace = new Workspace(workspaceId);
     workspace.delete();
   });
 }
@@ -90,7 +90,7 @@ function statusWorkspace(ya: yargs.Yargs) {
   let workspaceId = argv._[1] || path.basename(process.cwd());
   console.log("getting status workspace with id :", workspaceId);
   let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync("workspace-definition.json").toString());
-  let workspace = new Workspace(workspaceDefinition, workspaceId);
+  let workspace = new Workspace(workspaceId);
   workspace.status()
     .then(status => console.log(prettyjson.render(status)))
     .catch(error => console.error(error));

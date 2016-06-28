@@ -288,7 +288,9 @@ declare namespace dockerode {
   }
 
   interface Network {
+    inspect(): Promise<NetworkInfo>; 
     remove(): Promise<any>;
+
     connect({Container: string}): Promise<void>;
   }
 
