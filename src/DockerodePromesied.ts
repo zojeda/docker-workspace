@@ -5,17 +5,8 @@ export class DockerodePromesied {
   constructor(private docker: dockerode.Docker, private logMark: string) {}
   public run = this.promisifyDocker5Arg("running container", this.docker.run);
 
-  public startContainer(container: dockerode.Container) {
-    return this.promisifyDocker("start container", container.start, { context: container })();
-  };
   public removeContainer(container: dockerode.Container, options: dockerode.ContainerRemoveOptions) {
     return this.promisifyDocker1Arg("remove container", container.remove, { context: container })(options);
-  };
-  public killContainer(container: dockerode.Container, signal: string) {
-    return this.promisifyDocker1Arg("kill container", container.kill, { context: container })({signal: signal});
-  };
-  public async connectContainerToNetwork(containerName: string, network: dockerode.Network) {
-    return this.promisifyDocker1Arg("connect network", network.connect, { context: network })({Container: containerName});
   };
   public removeNetwork(network: dockerode.Network) {
     return this.promisifyDocker("removing network", network.remove, { context: network })();

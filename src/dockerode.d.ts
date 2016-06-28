@@ -1,5 +1,5 @@
 declare namespace dockerode {
-  interface DockerResponse<T> { (error: Error, response?: T): void; }
+  // interface DockerResponse<T> { (error: Error, response?: T): void; }
 
 
   interface Labels {
@@ -98,13 +98,33 @@ declare namespace dockerode {
   }
   
 
-  interface CreateContainerReq extends ContainerCreateOptions {
+  interface CreateContainerOptions extends ContainerCreateOptions {
     Image: string;
   }
 
   interface CreateVolumeOptions {
     Name: string,
     Labels: Labels
+  }
+
+  interface BuildImageOptions {
+      dockerfile?: string;   // - Path within the build context to the Dockerfile. This is ignored if remote is specified and points to an individual filename.
+      t?: string;            // – A name and optional tag to apply to the image in the name:tag format. If you omit the tag the default latest value is assumed. You can provide one or more t parameters.
+      remote?: string;       // – A Git repository URI or HTTP/HTTPS URI build source. If the URI specifies a filename, the file’s contents are placed into a file called Dockerfile.
+      q?: boolean;           // – Suppress verbose build output.
+      nocache?: boolean;     // – Do not use the cache when building the image.
+      pull?: boolean;        // - Attempt to pull the image even if an older image exists locally.
+      rm?: boolean;          // - Remove intermediate containers after a successful build (default behavior).
+      forcerm?: boolean;     // - Always remove intermediate containers (includes rm).
+      memory?: number;       // - Set memory limit for build.
+      memswap?: number;      // - Total memory (memory + swap), -1 to enable unlimited swap.
+      cpushares?: number;    // - CPU shares (relative weight).
+      cpusetcpus?: string;   // - CPUs in which to allow execution (e.g., 0-3, 0,1).
+      cpuperiod?: number;    // - The length of a CPU period in microseconds.
+      cpuquota?: number;     // - Microseconds of CPU time that the container can get in a CPU period.
+      buildargs?: {};        // – JSON map of string pairs for build-time variables. Users pass these values at build-time. Docker uses the buildargs as the environment context for command(s) run via the Dockerfile’s RUN instruction or for variable expansion in other Dockerfile instructions. This is not meant for passing secret values. Read more about the buildargs instruction
+      shmsize?: number;      // - Size of /dev/shm in bytes. The size must be greater than 0. If omitted the system uses 64MB.
+      labels?: Labels;       // – JSON map of string pairs for labels to set on the image.
   }
 
   interface VolumesInfo {
@@ -114,6 +134,25 @@ declare namespace dockerode {
       Mountpoint: string,
       Labels: Labels
     }[]
+  }
+
+  interface ListImagesOptions {
+      all?: boolean;    // – 1/True/true or 0/False/false, default false
+      filters?: {[key: string]: string[]}; // – a JSON encoded value of the filters (a map[string][]string) to process on the images list. Available filters:
+                                          // dangling=true
+                                          // label=key or label="key=value" of an image label
+      filter?: string;                     // - only return images with the specified name
+
+  }
+  interface ImageInfo {
+    Created: number,
+    Id: string,
+    ParentId: string,
+    RepoDigests: string[],
+    RepoTags: string[],
+    Size: number,
+    VirtualSize: number,
+    Labels: Labels
   }
 
   interface ContainerInfo {
@@ -212,31 +251,31 @@ declare namespace dockerode {
     id: string;
     inspect(options: {
       size: boolean
-    }, callback: DockerResponse<any>); //TODO info
-    inspect(done: DockerResponse<any>); //TODO
+    }): Promise<any>; //TODO info
+    inspect(): Promise<any>; //TODO
     //rename
-    update(params: ContainerUpdateOptions, done: DockerResponse<{Warings: string[]}>)
+    update(params: ContainerUpdateOptions): Promise<{Warings: string[]}>
     //changes
     //export
-    start(params: ContainerStartOptions, done: DockerResponse<void>);
-    start(done: DockerResponse<any>);
+    start(params: ContainerStartOptions): Promise<any>;
+    start(): Promise<any>;
     //pause
     //unpause
     //exec
     //commit
-    stop(done: DockerResponse<any>);
-    restart(done: DockerResponse<void>);
-    restart(params: { t: number }, done: DockerResponse<void>);
-    kill({signal: string}, done: DockerResponse<void>);
+    stop(): Promise<any>;
+    restart(): Promise<void>;
+    restart(params: { t: number }): Promise<void>;
+    kill({signal: string}): Promise<void>;
     //resize
     //attach
     //wait
-    remove(done: DockerResponse<any>);
-    remove(options: ContainerRemoveOptions, done: DockerResponse<any>);
+    remove(): Promise<any>;
+    remove(options: ContainerRemoveOptions): Promise<any>;
     //copy
     //getArchive
     //infoArchive
-    putArchive(tarPath: string, options: PutArchiveOptions, done: DockerResponse<void>);
+    putArchive(tarPath: string, options: PutArchiveOptions): Promise<void>;
     logs(options: {
       follow?: boolean; // - 1/True/true or 0/False/false, return stream. Default false.
       stdout?: boolean, // – 1/True/true or 0/False/false, show stdout log. Default false.
@@ -244,13 +283,13 @@ declare namespace dockerode {
       since?: number,   // – UNIX timestamp (integer) to filter logs. Specifying a timestamp will only output log-entries since that timestamp. Default: 0 (unfiltered)
       timestamps?: boolean, // – 1/True/true or 0/False/false, print timestamps for every log line. Default false.
       tail?: number;
-    }, done: DockerResponse<NodeJS.ReadableStream>);
+    }): Promise<NodeJS.ReadableStream>;
     //stats
   }
 
   interface Network {
-    remove(done: DockerResponse<any>);
-    connect({Container: string}, done: DockerResponse<void>);
+    remove(): Promise<any>;
+    connect({Container: string}): Promise<void>;
   }
 
   interface Volume {
@@ -258,7 +297,7 @@ declare namespace dockerode {
     //remove
   }
 
-  interface ListConainersQueryParameters {
+  interface ListConainersOptions {
     all?: boolean;
     limit?: number;
     since?: string;
@@ -273,7 +312,7 @@ declare namespace dockerode {
     };
   }
   
-  interface ListNetworksQueryParameters {
+  interface ListNetworksOptions {
     filters?:  {       //  - JSON encoded network list filter. The filter value is one of:
         name?: string[]  //  =<network-name> Matches all or part of a network name.
         id?: string,   //  =<network-id> Matches all or part of a network id.
@@ -281,7 +320,7 @@ declare namespace dockerode {
     }
   }
 
-  interface EventsQueryParameters {
+  interface GetEventsOptions {
     since?: number;
     until?: number;
     filters?: {
@@ -301,7 +340,7 @@ declare namespace dockerode {
       network?: string[]
     };
   }
-  interface NetworkParameters {
+  interface CreateNetworkOptions {
     Name: string;             //  - The new network’s name. this is a mandatory field
     CheckDuplicate?: boolean;  //  - Requests daemon to check for networks with same name
     Driver?: string;           //  - Name of the network driver plugin to use. Defaults to bridge driver
@@ -330,14 +369,15 @@ declare namespace dockerode {
   class Docker {
     modem: Modem;
     constructor(dockerHost?: any);
-    pull(tag: string, auth: { "authconfig": AuthConfig }, done: DockerResponse<any>);
-    pull(tag: string, done: DockerResponse<NodeJS.ReadableStream>);
+    pull(tag: string, auth: { authconfig: AuthConfig }) : Promise<NodeJS.ReadableStream>;
+    pull(tag: string) : Promise<NodeJS.ReadableStream>;
     listContainers() : Promise<ContainerInfo[]>;
-    listContainers(options: ListConainersQueryParameters) : Promise<ContainerInfo[]>;
+    listContainers(options: ListConainersOptions) : Promise<ContainerInfo[]>;
     getContainer(id: string): Container;
     listNetworks() : Promise<NetworkInfo[]>;
-    listNetworks(options: ListNetworksQueryParameters) : Promise<NetworkInfo[]>;
+    listNetworks(options: ListNetworksOptions) : Promise<NetworkInfo[]>;
     listVolumes() : Promise<VolumesInfo>;
+    listImages(options: ListImagesOptions): Promise<ImageInfo[]>;
     getNetwork(id: string): Network;
 
     /**
@@ -348,11 +388,12 @@ declare namespace dockerode {
      * start_options: any,  //- options used for container start. (optional)
      * callback: any      // - callback called when execution ends.
      */
-    run(image: string, cmd: string, stream: NodeJS.WritableStream[], create_options: ContainerCreateOptions, start_options?: ContainerStartOptions, done?: DockerResponse<Container>);
-    createContainer(configuration: CreateContainerReq) : Promise<Container>;
+    run(image: string, cmd: string, stream: NodeJS.WritableStream[], create_options: ContainerCreateOptions, start_options?: ContainerStartOptions): Promise<Container>;
+    buildImage(tarFile: string, options: BuildImageOptions) : Promise<NodeJS.ReadableStream>;
+    createContainer(configuration: CreateContainerOptions) : Promise<{id: string}>;
     createVolume(options: CreateVolumeOptions) : Promise<Volume>;
-    getEvents(options: EventsQueryParameters, done: DockerResponse<NodeJS.ReadableStream>);
-    createNetwork(options: NetworkParameters) : Promise<{ id: string, Warning?: string }>;
+    getEvents(options: GetEventsOptions): Promise<NodeJS.ReadableStream>;
+    createNetwork(options: CreateNetworkOptions) : Promise<{ id: string, Warning?: string }>;
   }
 }
 

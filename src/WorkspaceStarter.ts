@@ -5,14 +5,21 @@ import {
   WorkspaceDefinition,
   WorkspaceStatus,
   RuntimeDefinition,
-  RuntimeStatus
+  RuntimeStatus,
+  RuntimeImage,
+  BuildImageDefinition
 } from "./api";
+
+import * as util from './utils';
 
 import {DockerodePromesied} from "./DockerodePromesied";
 
 
 import { Provisioner} from "./Provisioner";
 import {FSCopyProvisioner} from "./FSCopyProvisioner";
+
+var streamToPromise = require("stream-to-promise")
+
 
 const PROVISIONERS = {
   fsCopy: FSCopyProvisioner
@@ -26,11 +33,11 @@ export class WorkspaceStarter {
 
   constructor(private workspaceId: string, private workspaceDefinition: WorkspaceDefinition, private docker: dockerode.Docker) {
     this.dockerP = new DockerodePromesied(docker, workspaceId);
-    let services = this.workspaceDefinition.development.services;
+    let services = this.workspaceDefinition.development.services || {};
     Object.keys(services).forEach((serviceName) => {
       this.allRuntimes.set(serviceName, { path: "development.services." + serviceName, application: services[serviceName] });
     });
-    let tools = this.workspaceDefinition.development.tools;
+    let tools = this.workspaceDefinition.development.tools || {};
     Object.keys(tools).forEach((toolName) => {
       this.allRuntimes.set(toolName, { path: "development.tools." + toolName, application: tools[toolName] });
     });
@@ -126,11 +133,11 @@ export class WorkspaceStarter {
     // await this.pull(app.image, progress);
     const containerName = name + "." + this.workspaceId;
     const commandArray = app.command && ["bash", "-c", app.command];
-    const containerImage = app.image || this.workspaceDefinition.development.image;
+    const imageDefinition = app.image || this.workspaceDefinition.development.image;
     const code = this.workspaceDefinition.development.code;
     const bindCodeTo = code.bindToHostPath ? nodePath.resolve(code.bindToHostPath) : this.workspaceId;
-
-    const containerOptions: dockerode.CreateContainerReq = {
+    const containerImage = await this.getContainerImage(imageDefinition);
+    const containerOptions: dockerode.CreateContainerOptions = {
       name: containerName,
       Hostname: name,
       Image: containerImage,
@@ -166,15 +173,48 @@ export class WorkspaceStarter {
         containerOptions.HostConfig.Links.push(`${linkName}:${otherRuntime}`);
       }
     });
-    let container = await this.docker.createContainer(containerOptions);
+    let containerInfo = await this.docker.createContainer(containerOptions);
+    let container = this.docker.getContainer(containerInfo.id)
     progress && progress(`[ ${this.workspaceId} ] starting '${name}'`);
-    await this.dockerP.startContainer(container);
-    await this.dockerP.connectContainerToNetwork(container.id, teamNetwork);
+    await container.start();
+    await teamNetwork.connect({Container: container.id});
     logger.debug("[ %s ] started '%s' ", this.workspaceId, name);
   }
 
+  private async getContainerImage(imageDefinition: RuntimeImage ) {
+
+    if (typeof imageDefinition === "string") {
+      // pull the image
+      const pullStream = await this.docker.pull(imageDefinition)
+      util.progressBars(pullStream, process.stdout);
+      await streamToPromise(pullStream);
+      return imageDefinition;
+    }
+    // build the image
+    const buildImage = imageDefinition as BuildImageDefinition;
+    const buildImageTar = await util.createTempTarFromPath(buildImage.build, 'build-'+buildImage.name);
+    const tarHash = await util.md5(buildImageTar);
+
+    const builtImageInfo = await this.docker.listImages({filters: {label: [`workspace.build.md5=${tarHash}`, "workspace=true"]}});
+    if (builtImageInfo.length > 0) {
+      logger.debug("[ %s ] using built image '%s' ", this.workspaceId, buildImage.name);
+      return buildImage.name;
+    }
+    const buildStream = await this.docker.buildImage(buildImageTar, {
+      t: buildImage.name,
+      pull: true,
+      labels: {
+        "workspace": "true",
+        "workspace.build.md5": tarHash        
+      }}
+    );
+    util.progressBars(buildStream, process.stdout);
+    await streamToPromise(buildStream);
+    return buildImage.name;
+  }
+
   private createWorkspaceNetwork() {
-    let networkSettings: dockerode.NetworkParameters = {
+    let networkSettings: dockerode.CreateNetworkOptions = {
       Name: this.workspaceId,
       CheckDuplicate: true,
       Labels: {
@@ -236,11 +276,15 @@ export class WorkspaceStarter {
     return this.dockerP.removeContainer(container, { force: true });
   }
 
-  private listWorkspaceContainers() {
-    return this.docker.listContainers({
+  private async listWorkspaceContainers() {
+    // return await this.docker.listContainers({
+    //   all: true,
+    //   filters: { label: [`workspace.id=${this.workspaceId}`] }
+    // });
+    return await this.docker.listContainers({
       all: true,
       filters: { label: [`workspace.id=${this.workspaceId}`] }
-    });
+    });    
   }
 
   private getRuntimeDefinitionByPath(containerInfo: dockerode.ContainerInfo): RuntimeDefinition {

@@ -8,6 +8,9 @@ import {Workspace, WorkspaceDefinition} from "./api";
 
 var prettyjson = require("prettyjson");
 
+import {capaMongoWorkspace} from './mongoTrainingDefinition.ts';
+fs.writeFileSync('./workspace-definition.json', JSON.stringify(capaMongoWorkspace, null, 2));
+
 yargs
   .usage("Usage: dw <command> [options]")
   .command("start", "Start a workspace from a definition", startWorkspace)
@@ -42,11 +45,11 @@ function  startWorkspace(ya: yargs.Yargs) {
     let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
     let workspaceDefinition: WorkspaceDefinition = JSON.parse(fs.readFileSync((argv as any).w).toString());
     console.log("starting : ", workspaceIds)
-    workspaceIds.forEach(workspaceId => {
+    let starts = workspaceIds.map(workspaceId => {
       let workspace = new Workspace(workspaceDefinition, workspaceId);
       workspace.start(console.log);
     });
-    setTimeout(() => console.log("completo..."), 500000);
+    Promise.all(starts).then(() => "all started");
   } catch (error) {
     console.error(error);
   }

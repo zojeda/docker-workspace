@@ -1,9 +1,19 @@
 {
   "development": {
-    "image": "zojeda/mongo-training",
+    "image": {
+      "name": "zojeda/mongo-training",
+      "build": "./devEnv/mongo-training"
+    },
     "code": {
       "path": "/capacitacion-mongo",
-      "provisions": [{ "name": "fsCopy", "params": {"path": "../hexacta/capa-mongo/hx-capa-mongo"}}]
+      "provisions": [
+        {
+          "name": "fsCopy",
+          "params": {
+            "path": "../hx-capa-mongo/hx-capa-mongo"
+          }
+        }
+      ]
     },
     "tools": {
       "cloud9": {

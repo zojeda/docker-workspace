@@ -1,5 +1,6 @@
 {
   "globalDependencies": {
+    "jsonstream": "registry:dt/jsonstream#0.8.0+20160316155526",
     "node": "registry:dt/node#6.0.0+20160602155235",
     "winston": "registry:dt/winston#0.0.0+20160417152829"
   },

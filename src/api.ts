@@ -3,8 +3,15 @@ export interface CommandDefinition {
   style: string;
 }
 
+export interface BuildImageDefinition {
+  build: string;
+  name: string;
+}
+
+export type RuntimeImage =  string | BuildImageDefinition;
+
 export interface RuntimeDefinition {
-  image?: string;
+  image?: RuntimeImage;
   command?: string;
   description?: string;
   icon?: string;
@@ -14,38 +21,47 @@ export interface RuntimeDefinition {
 }
 
 export interface DevelopmentEnvironment {
-  image: string;
+  image: RuntimeImage;
   ports?: number[];
   code: {
-    path: string,
-    bindToHostPath?: string, //absolute path
-    provisions?: { name: string, params: any }[];
+    path: string;
+    bindToHostPath?: string;
+    provisions?: {
+      name: string;
+      params: any;
+    }[];
   };
-  commands?: { [name: string]: CommandDefinition };
-  tools: { [name: string]: RuntimeDefinition };
-  services: { [name: string]: RuntimeDefinition };
+  commands?: {
+    [name: string]: CommandDefinition;
+  };
+  tools?: {
+    [name: string]: RuntimeDefinition;
+  };
+  services?: {
+    [name: string]: RuntimeDefinition;
+  };
   shell?: string;
 }
-
 export interface WorkspaceDefinition {
   development: DevelopmentEnvironment;
   team?: string;
 }
-
 export interface RuntimeStatus {
   status: string;
   type: string;
   network: {
-    ip: string,
-    port: number,
-    additional?: {[networkName: string]: string}
+    ip: string;
+    port: number;
+    additional?: {
+      [networkName: string]: string;
+    };
   };
   definition: RuntimeDefinition;
 }
-
 export interface WorkspaceStatus {
   workspaceId: string;
-  runtimes: { [path: string]: RuntimeStatus };
+  runtimes: {
+    [path: string]: RuntimeStatus;
+  };
 }
-
-export {Workspace} from "./Workspace";
+export { Workspace } from "./Workspace";

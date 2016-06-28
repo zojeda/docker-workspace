@@ -2,10 +2,12 @@ import {WorkspaceDefinition}  from "./api";
 
 export let capaMongoWorkspace: WorkspaceDefinition = {
   development: {
-    image: "zojeda/mongo-training",
+    image: {
+      name: "zojeda/mongo-training",
+      build: "./devEnv/mongo-training" 
+    },
     code: {
       path: "/capacitacion-mongo",
-      bindToHostPath: "../content",
       provisions: [{name: "fsCopy", params: { path: "../hx-capa-mongo/hx-capa-mongo"}}]
     },
     tools: {

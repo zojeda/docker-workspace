@@ -11,16 +11,15 @@ var tar = require("tar-fs");
 export class FSCopyProvisioner implements Provisioner {
   constructor(private params: {path: string}){}
 
-  addContent(workspaceId: string,
+  async addContent(workspaceId: string,
     definition: WorkspaceDefinition,
     container: dockerode.Container,
     progress: (string) => void)
     : Promise<void> {
-    return new Promise<void>((resolve, reject) => {
       let sourcePath = path.resolve(this.params.path);
       if (!fs.existsSync(sourcePath)) {
         logger.error("[ %s ] source path do not exists: %s", workspaceId, sourcePath);
-        return reject("source path do not exists: " + sourcePath);
+        throw ("source path do not exists: " + sourcePath);
       }
       if (path.extname(sourcePath) != "tar") {
         logger.debug("[ %s ] making a tar file with the provided content: %s", workspaceId, sourcePath);
@@ -32,23 +31,17 @@ export class FSCopyProvisioner implements Provisioner {
         let tarPath = path.join(tempDir, workspaceId+"-code.tar");
         logger.debug("[ %s ] creating tar file : %s", workspaceId, tarPath);
         tar.pack(sourcePath).pipe(fs.createWriteStream(tarPath))
-            .on("finish", () => {
-              putArchive(workspaceId, container, tarPath, definition.development.code.path, resolve, reject);
+            .on("finish", async () => {
+              await putArchive(workspaceId, container, tarPath, definition.development.code.path);
+              return;
         });
       } else {
-        putArchive(workspaceId, container, sourcePath, definition.development.code.path, resolve, reject);
+        await putArchive(workspaceId, container, sourcePath, definition.development.code.path);
+        return;
       }
-    });
   }
 }
 
-function putArchive(logMark: string, container: dockerode.Container, sourcePath: string, destinationPath: string, resolve, reject) {
-  container.putArchive(sourcePath, { path: destinationPath }, (error, response) => {
-    if (error) {
-      logger.error("[ %s ] error put archive to container", logMark, error);
-      return reject(error);
-    }
-    logger.debug("[ %s ] put archive success", logMark);
-    resolve();
-  });
+async function putArchive(logMark: string, container: dockerode.Container, sourcePath: string, destinationPath: string) {
+  return await container.putArchive(sourcePath, { path: destinationPath });
 }

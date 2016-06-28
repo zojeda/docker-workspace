@@ -6,10 +6,12 @@ import {DockerodePromesied} from "./DockerodePromesied";
 import {WorkspaceStarter} from "./WorkspaceStarter";
 import {WorkspaceDefinition, WorkspaceStatus} from "./api";
 import {logger} from "./logger";
+import * as util from './utils';
 
 var Docker = require("./DockerPromise");
 var Handlebars = require("handlebars");
 var dockerOpts = require("dockerode-options");
+var streamToPromise = require("stream-to-promise")
 
 export class Workspace {
   private workspaceDefinitionPath: string;
@@ -26,9 +28,7 @@ export class Workspace {
   public async start(progress?: (string) => any) {
     try {
 
-      console.log("start...")
       let teamNetwork = await this.getTeamNetwork();
-      console.log("starter start...")
       await this.dockerWorkspaceHandler.start(teamNetwork, progress);
       await this.reloadWebProxy();
     } catch (error) {
@@ -51,8 +51,21 @@ export class Workspace {
     logger.info("restarting proxy conf");
     await this.regenerateHAProxyConf();
     let proxys = await Workspace.docker.listContainers({ filters: { label: ["workspace=proxy", "workspace-team=" + this.teamName] } });
+    console.log(proxys);
     if (proxys.length === 0) {
-      let containerOptions: dockerode.CreateContainerReq = {
+      let userConfigPathToDocker = this.UserConfigPath;
+      const isWin = /^win/.test(process.platform);
+      if (isWin) {
+        userConfigPathToDocker = userConfigPathToDocker.replace(/[\\]/g, '/').replace(/^(\w):/, '/$1');
+        userConfigPathToDocker = '/' + userConfigPathToDocker[1].toLowerCase() + userConfigPathToDocker.substring(2);
+      }
+      console.log(userConfigPathToDocker);
+      //pull if not found 
+      const pullStream = await Workspace.docker.pull('haproxy:latest');
+      util.progressBars(pullStream, process.stdout);
+      await streamToPromise(pullStream);
+ 
+      let containerOptions: dockerode.CreateContainerOptions = {
         name: "workspace.proxy",
         Image: "haproxy",
         Tty: false,
@@ -62,17 +75,18 @@ export class Workspace {
         },
         HostConfig: {
           NetworkMode: this.teamName,
-          Binds: [`${path.join(this.UserConfigPath, "haproxy.cfg")}:/usr/local/etc/haproxy/haproxy.cfg`],
+          Binds: [`${userConfigPathToDocker}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg`],
           PortBindings: { "8080/tcp": [{ HostPort: "8080" }] }
         }
       };
 
-      this.proxyContainer = await Workspace.docker.createContainer(containerOptions);
-      await Workspace.dockerP.startContainer(this.proxyContainer);
+      const proxyInfo = await Workspace.docker.createContainer(containerOptions);
+      this.proxyContainer = Workspace.docker.getContainer(proxyInfo.id);
+      await this.proxyContainer.start();
     } else {
       this.proxyContainer = Workspace.docker.getContainer(proxys[0].Id);
     }
-    await Workspace.dockerP.killContainer(this.proxyContainer, "HUP");
+    await this.proxyContainer.kill({signal: "HUP"});
   }
 
 
@@ -98,17 +112,14 @@ export class Workspace {
 
   private teamNetwork: dockerode.Network;
   private async getTeamNetwork() {
-    console.log("getTeamNetwork")
     if (!!this.teamNetwork) {
-      console.log("returning team network static", this.teamNetwork);
       return this.teamNetwork;
     } else {
       let teamNetworkId: string;
       let networks = await Workspace.docker.listNetworks({ filters: { name: [this.teamName] } })
-      console.log(networks)
       let teamNetworkInfo = networks[0];
       if (!teamNetworkInfo) {
-        let networkSettings: dockerode.NetworkParameters = {
+        let networkSettings: dockerode.CreateNetworkOptions = {
           Name: this.teamName,
           CheckDuplicate: true,
           Labels: {
@@ -116,16 +127,15 @@ export class Workspace {
           }
         };
         logger.info("[%s] creating team network '%s'", this.workspaceId, this.teamName);
-        const result = await Workspace.docker.createNetwork(networkSettings)
+        const result = await Workspace.docker.createNetwork(networkSettings);
         teamNetworkId = result.id;
         this.teamNetwork = Workspace.docker.getNetwork(teamNetworkId);
-        console.log("returning team network just created", this.teamNetwork);
         return this.teamNetwork;
       } else {
-        console.log("using workspaceNetwork")
+        logger.info("[%s] using workspaceNetwork", this.workspaceId);
         teamNetworkId = teamNetworkInfo.Id;
         this.teamNetwork = Workspace.docker.getNetwork(teamNetworkId);
-        console.log("returning system network from system", this.teamNetwork);
+        logger.info("[%s] returning system network from system", this.workspaceId, this.teamNetwork);
         return this.teamNetwork;
       }
     }
@@ -137,11 +147,12 @@ export class Workspace {
 
   public get UserConfigPath() {
     var mkdirp = require("mkdirp");
-    let userConfigPath = path.join(process.env.HOME || process.env.USERPROFILE, ".docker-workspace", this.workspaceDefinition.team);
+    let userConfigPath = path.join(process.env.USERPROFILE || process.env.HOME , ".docker-workspace", this.workspaceDefinition.team);
     if (!fs.existsSync(userConfigPath)) {
       mkdirp.sync(userConfigPath);
       logger.info("created workspace config dir : ", userConfigPath);
     }
+    logger.debug("using workspace config dir : ", userConfigPath);
     return userConfigPath;
   }
 
