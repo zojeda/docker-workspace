@@ -13,7 +13,7 @@ frontend http-in
  
 {{#each statuses }}
 {{#each runtimes}}
-    acl {{../workspaceId}}.{{@key}} path_end /webapp{{../workspaceId}}.{{@key}}.
+    acl {{../workspaceId}}.{{@key}}  hdr(host)     -m beg {{../workspaceId}}.{{@key}}.
     use_backend {{../workspaceId}}.{{@key}} if {{../workspaceId}}.{{@key}}
 {{/each}}
 {{/each}}
