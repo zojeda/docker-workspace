@@ -2,7 +2,6 @@ import fs = require("fs");
 import path = require("path");
 
 
-import {DockerodePromesied} from "./DockerodePromesied";
 import {WorkspaceStarter} from "./WorkspaceStarter";
 import {WorkspaceDefinition, WorkspaceStatus, RuntimeStatus, RuntimeDefinition} from "./api";
 import {logger} from "./logger";
@@ -15,14 +14,14 @@ var streamToPromise = require("stream-to-promise")
 
 export class Workspace {
   private proxyContainer: dockerode.Container;
-  private static docker: dockerode.Docker = new Docker(dockerOpts());
+  
 
-  constructor(public workspaceId: string) {
+  constructor(public workspaceId: string, private docker: dockerode.Docker = new Docker(dockerOpts())) {
   }
 
   public async start(workspaceDefinition: WorkspaceDefinition, progress?: (string) => any) {
     try {
-      const workspaceStarter = new WorkspaceStarter(this.workspaceId, workspaceDefinition, Workspace.docker);
+      const workspaceStarter = new WorkspaceStarter(this.workspaceId, workspaceDefinition, this.docker);
 
       let teamNetwork = await this.getTeamNetwork(workspaceDefinition);
       await workspaceStarter.start(teamNetwork, progress);
@@ -34,7 +33,7 @@ export class Workspace {
 
   public async delete(progress?: (string) => any) {
   try {
-      let containers = await Workspace.docker.listContainers({
+      let containers = await this.docker.listContainers({
         all: true,
         filters: { label: [`workspace.id=${this.workspaceId}`] }
       });
@@ -51,14 +50,14 @@ export class Workspace {
   }
 
   public async getWorkspaceDefinition() {
-      const network = Workspace.docker.getNetwork(this.workspaceId);
+      const network = this.docker.getNetwork(this.workspaceId);
       const networkInfo = await network.inspect();
       const wd : WorkspaceDefinition = JSON.parse(networkInfo.Labels['workspace.definition']);
       return wd;
   }
 
   public async status() {
-    const containers = await Workspace.docker.listContainers({
+    const containers = await this.docker.listContainers({
       all: true,
       filters: { label: [`workspace.id=${this.workspaceId}`] }
     });
@@ -104,7 +103,7 @@ export class Workspace {
     logger.info("restarting proxy conf");
     await this.regenerateHAProxyConf();
     const teamName = await this.getTeamName();
-    let proxys = await Workspace.docker.listContainers({ filters: { label: ["workspace=proxy", "workspace-team=" + teamName] } });
+    let proxys = await this.docker.listContainers({ filters: { label: ["workspace=proxy", "workspace-team=" + teamName] } });
     if (proxys.length === 0) {
       let userConfigPathToDocker =  await this.getUserConfigPath();
       const isWin = /^win/.test(process.platform);
@@ -114,7 +113,7 @@ export class Workspace {
       }
       console.log(userConfigPathToDocker);
       //pull if not found 
-      const pullStream = await Workspace.docker.pull('haproxy:latest');
+      const pullStream = await this.docker.pull('haproxy:latest');
       util.progressBars(pullStream, process.stdout);
       await streamToPromise(pullStream);
 
@@ -133,18 +132,18 @@ export class Workspace {
         }
       };
 
-      const proxyInfo = await Workspace.docker.createContainer(containerOptions);
-      this.proxyContainer = Workspace.docker.getContainer(proxyInfo.id);
+      const proxyInfo = await this.docker.createContainer(containerOptions);
+      this.proxyContainer = this.docker.getContainer(proxyInfo.id);
       await this.proxyContainer.start();
     } else {
-      this.proxyContainer = Workspace.docker.getContainer(proxys[0].Id);
+      this.proxyContainer = this.docker.getContainer(proxys[0].Id);
     }
     await this.proxyContainer.kill({signal: "HUP"});
   }
 
 
-  public static async list(team?: string) {
-    let networks = await Workspace.docker.listNetworks({});
+  public static async list(team?: string, docker: dockerode.Docker = new Docker(dockerOpts())) {
+    let networks = await docker.listNetworks({});
     return networks.filter(network => team
       ? network.Labels["workspace.team"] === team
       : network.Labels["workspace.id"] !== undefined).map(network => network.Labels["workspace.id"]);
@@ -175,7 +174,7 @@ export class Workspace {
     } else {
       let teamNetworkId: string;
       const teamName = await this.getTeamName(workspaceDefinition);
-      let networks = await Workspace.docker.listNetworks({ filters: { name: [teamName] } })
+      let networks = await this.docker.listNetworks({ filters: { name: [teamName] } })
       let teamNetworkInfo = networks[0];
       if (!teamNetworkInfo) {
         let networkSettings: dockerode.CreateNetworkOptions = {
@@ -186,14 +185,14 @@ export class Workspace {
           }
         };
         logger.info("[%s] creating team network '%s'", this.workspaceId, teamName);
-        const result = await Workspace.docker.createNetwork(networkSettings);
+        const result = await this.docker.createNetwork(networkSettings);
         teamNetworkId = result.id;
-        this.teamNetwork = Workspace.docker.getNetwork(teamNetworkId);
+        this.teamNetwork = this.docker.getNetwork(teamNetworkId);
         return this.teamNetwork;
       } else {
         logger.info("[%s] using workspaceNetwork", this.workspaceId);
         teamNetworkId = teamNetworkInfo.Id;
-        this.teamNetwork = Workspace.docker.getNetwork(teamNetworkId);
+        this.teamNetwork = this.docker.getNetwork(teamNetworkId);
         logger.info("[%s] returning system network from system", this.workspaceId);
         return this.teamNetwork;
       }
@@ -202,13 +201,13 @@ export class Workspace {
 
   private removeContainer(containerInfo: dockerode.ContainerInfo) {
     logger.debug("[ %s ] removing container : ", this.workspaceId, containerInfo.Names);
-    let container = Workspace.docker.getContainer(containerInfo.Id);
+    let container = this.docker.getContainer(containerInfo.Id);
     return container.remove({ force: true });
   }
 
   private removeWorkspaceNetwork() {
     logger.debug("[ %s ] removing workspace network : ", this.workspaceId);
-    let network = Workspace.docker.getNetwork(this.workspaceId);
+    let network = this.docker.getNetwork(this.workspaceId);
     return network.remove();
   }
 

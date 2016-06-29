@@ -12,9 +12,6 @@ import {
 
 import * as util from './utils';
 
-import {DockerodePromesied} from "./DockerodePromesied";
-
-
 import { Provisioner} from "./Provisioner";
 import {FSCopyProvisioner} from "./FSCopyProvisioner";
 
@@ -29,10 +26,8 @@ const PROVISIONERS = {
 export class WorkspaceStarter {
 
   private allRuntimes = new Map<string, { path: string, application: RuntimeDefinition }>();
-  private dockerP: DockerodePromesied;
 
   constructor(private workspaceId: string, private workspaceDefinition: WorkspaceDefinition, private docker: dockerode.Docker) {
-    this.dockerP = new DockerodePromesied(docker, workspaceId);
     let services = this.workspaceDefinition.development.services || {};
     Object.keys(services).forEach((serviceName) => {
       this.allRuntimes.set(serviceName, { path: "development.services." + serviceName, application: services[serviceName] });
