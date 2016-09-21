@@ -47,9 +47,11 @@ function  startWorkspace(ya: yargs.Yargs) {
     console.log("starting : ", workspaceIds)
     let starts = workspaceIds.map(workspaceId => {
       let workspace = new Workspace(workspaceId);
-      workspace.start(workspaceDefinition, console.log);
+      workspace.start(workspaceDefinition, process.stdout);
     });
-    Promise.all(starts).then(() => "all started");
+    Promise.all(starts)
+      .then(() => console.log("all started"))
+      .catch(console.error)
   } catch (error) {
     console.error(error);
   }
@@ -74,7 +76,7 @@ function stopWorkspace(ya: yargs.Yargs) {
   let workspaceIds = argv._.slice(1) || [path.basename(process.cwd())];
   workspaceIds.forEach(workspaceId => {
     let workspace = new Workspace(workspaceId);
-    workspace.delete();
+    workspace.stop(process.stdout);
   });
 }
 
@@ -103,7 +105,7 @@ function listWorkspaces(ya: yargs.Yargs) {
     .argv;
 
   let team = argv._[1];
-  Workspace.list(team).then(workspaces => workspaces.forEach((w) => console.log(w)));
+  // Workspace.list(team).then(workspaces => workspaces.forEach((w) => console.log(w)));
 }
 
 
