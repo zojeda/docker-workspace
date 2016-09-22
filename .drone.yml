@@ -1,7 +1,0 @@
-build:
-  image: node
-  pull: true
-  commands:
-      - npm install
-      - npm run typings
-      - npm test
