@@ -1,5 +1,6 @@
 import nodePath = require("path");
-import {logger} from "./logger";
+
+let logger : any; // FIXME
 
 import {
   WorkspaceDefinition,
@@ -138,7 +139,7 @@ export class WorkspaceStarter {
     }
     // build the image
     const buildImage = imageDefinition as BuildImageDefinition;
-    const buildImageTar = await util.createTempTarFromPath(buildImage.build, 'build-'+buildImage.name);
+    const buildImageTar = await util.createTempTarFromPath(buildImage.build, 'build-'+buildImage.name, null); // FIXME
     const tarHash = await util.md5(buildImageTar);
 
     const builtImageInfo = await this.docker.listImages({filters: {label: [`workspace.build.md5=${tarHash}`, "workspace=true"]}});

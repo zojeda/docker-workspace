@@ -4,3 +4,4 @@ npm-debug.log
 typings/
 output.txt
 *.log
+coverage/

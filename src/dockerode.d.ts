@@ -127,13 +127,15 @@ declare namespace dockerode {
       labels?: Labels;       // – JSON map of string pairs for labels to set on the image.
   }
 
-  interface VolumesInfo {
-    Volumes: {
+  interface VolumeInfo {
       Name: string,
       Driver: string,
       Mountpoint: string,
       Labels: Labels
-    }[]
+  }
+
+  interface VolumesInfo {
+    Volumes: VolumeInfo[]
   }
 
   interface ListImagesOptions {

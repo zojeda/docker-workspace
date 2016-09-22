@@ -4,7 +4,7 @@ import path = require("path");
 import crypto = require('crypto');
 import JSONStream = require('JSONStream')
 
-import { logger } from "./logger";
+import { loggerFactory } from "./logger";
 
 const es = require('event-stream')
 
@@ -15,13 +15,14 @@ const parentDir = path.join(os.tmpdir(), "docker-workspace");
 if (!fs.existsSync(parentDir)) {
     fs.mkdirSync(parentDir);
 }
-export function createTempTarFromPath(imagePath: string, referenceInfo: string): Promise<string> {
+export function createTempTarFromPath(imagePath: string, referenceInfo: string, output: NodeJS.WritableStream): Promise<string> {
     let promise = new Promise<string>((resolve, reject) => {
-        let tarFileName = referenceInfo.replace(/[\/\\]/, "_");
-        let tempDir = fs.mkdtempSync(path.join(parentDir, tarFileName));
-        let tarPath = path.join(tempDir, tarFileName + ".tar");
+        const logger = loggerFactory(referenceInfo, output)
+        const tarFileName = referenceInfo.replace(/[\/\\]/, "_");
+        const tempDir = fs.mkdtempSync(path.join(parentDir, tarFileName));
+        const tarPath = path.join(tempDir, tarFileName + ".tar");
         const sourcePath = path.resolve(imagePath);
-        logger.debug("[ %s ] creating tar file : %s from %s", referenceInfo, tarPath, sourcePath);
+        logger.debug("creating tar file : %s from %s", tarPath, sourcePath);
         tar.pack(sourcePath).pipe(fs.createWriteStream(tarPath))
             .on("finish", () => {
                 resolve(tarPath);

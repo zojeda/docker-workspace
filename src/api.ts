@@ -15,15 +15,12 @@ export interface RuntimeDefinition {
   command?: string;
   description?: string;
   icon?: string;
-  port: number;
-  type: "tcp-service" | "http-api" | "web-application";
+  port?: number;
+  type: "tcp-service" | "http-api" | "web-application" | "process";
   shell?: string;
 }
 
-export interface DevelopmentEnvironment {
-  image: RuntimeImage;
-  ports?: number[];
-  code: {
+export interface Volume {
     path: string;
     bindToHostPath?: string;
     provisions?: {
@@ -31,6 +28,11 @@ export interface DevelopmentEnvironment {
       params: any;
     }[];
   };
+
+export interface DevelopmentEnvironment {
+  image: RuntimeImage;
+  ports?: number[];
+  code: Volume;
   commands?: {
     [name: string]: CommandDefinition;
   };
