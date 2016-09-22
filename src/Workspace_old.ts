@@ -4,8 +4,9 @@ import path = require("path");
 
 import {WorkspaceStarter} from "./WorkspaceStarter";
 import {WorkspaceDefinition, WorkspaceStatus, RuntimeStatus, RuntimeDefinition} from "./api";
-import {logger} from "./logger";
 import * as util from './utils';
+
+let logger : any; // FIXME
 
 var Docker = require("./DockerPromise");
 var Handlebars = require("handlebars");

@@ -2,6 +2,7 @@ import chai = require('chai');
 import cp = require('child_process');
 import {WorkspaceDefinition} from './api';
 import {Workspace} from './Workspace';
+
 chai.should();
 
 let sampleWorkspaceDefinition: WorkspaceDefinition = {

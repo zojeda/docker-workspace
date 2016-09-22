@@ -4,9 +4,9 @@ import path = require("path");
 
 import { WorkspaceDefinition } from "./api";
 import { Provisioner} from "./Provisioner";
-import { logger } from "./logger";
 
-var tar = require("tar-fs");
+let logger : any; // FIXME
+const tar = require("tar-fs");
 
 export class FSCopyProvisioner implements Provisioner {
   constructor(private params: {path: string}){}

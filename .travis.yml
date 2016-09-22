@@ -4,14 +4,23 @@ language: node_js
 node_js:
   - "6"
 
-script:
-  - npm test
-
 install:
+  - npm install -g codeclimate-test-reporter
   - npm install
 
 before_script:
   - npm run typings
+  - npm run compile
+
+script:
+  - npm run coverage
+
+after_script:
+  - codeclimate-test-reporter < coverage/lcov-final.info
+
+addons:
+    code_climate:
+        repo_token: 047f6c7c974adaebff044dc52d17c70a21c47450817a1fe07d670f6760c824b2
 
 services:
   - docker
