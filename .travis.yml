@@ -12,7 +12,6 @@ install:
 
 before_script:
   - npm run typings
-  - npm run compile
 
 services:
   - docker
