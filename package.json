@@ -11,7 +11,7 @@
     "compile": "tsc",
     "test": "mocha --timeout 15000 --compilers ts:ts-node/register --reporter spec src/**/*.spec.ts",
     "_coverage": "istanbul cover node_modules/mocha/bin/_mocha -- --timeout 15000 --reporter spec dist/**/*.spec.js",
-    "remap-istanbul" : "remap-istanbul -i  coverage/coverage.json -o coverage/lcov-final.info -t lcovonly",
+    "remap-istanbul": "remap-istanbul -i  coverage/coverage.json -o coverage/lcov-final.info -t lcovonly",
     "coverage": "npm run _coverage && npm run remap-istanbul",
     "typings": "typings install"
   },
@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "chai-as-promised": "^5.3.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.0.2",
     "remap-istanbul": "^0.6.4",

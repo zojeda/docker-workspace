@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "chai": "registry:npm/chai#3.5.0+20160723033700",
+    "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142",
     "yargs": "registry:npm/yargs#3.31.0+20160316010718"
   }
 }

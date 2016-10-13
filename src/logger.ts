@@ -6,7 +6,7 @@ export function loggerFactory(label: string, output: NodeJS.WritableStream): win
     transports: [
       new winston.transports.Console({
         colorize: true,
-        level: "debug",
+        level: "info",
         label: label
       })
     ]

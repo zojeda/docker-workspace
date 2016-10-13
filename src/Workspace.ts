@@ -47,8 +47,8 @@ export class Workspace {
             const codeVolume = new WorkspaceVolume(this.workspaceId);
             await codeVolume.create(output);
 
-            const workspaceNetwork = new Network(this.workspaceId);
-            await workspaceNetwork.start(output);
+            // const workspaceNetwork = new Network(this.workspaceId);
+            // await workspaceNetwork.start(output);
 
             const allRuntimes = this.getAllRuntimes(workspaceDefinition);
             let globalBindings = [workspaceDefinition.development.code];

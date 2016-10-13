@@ -15,6 +15,8 @@ export class Network {
     public async start(output: NodeJS.WritableStream) {
         const logger = loggerFactory(this.workspaceId+'.network', output);
         logger.debug("starting ");
-        return docker.createNetwork({Name: this.workspaceId})
+        const network = await docker.createNetwork({Name: this.workspaceId})
+        logger.debug("started ", network.id);
+        return network;
     }
 }
